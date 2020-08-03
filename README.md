@@ -1,5 +1,12 @@
+## 基于 SpringBoot+Maven+Mybatis 高并发商城秒杀系统（基础项目）
 
+## 开发工具 
+IntelliJ IDEA 2019.3.3 x64
+## 开发环境				
 
+| JDK |Maven | Mysql |SpringBoot 
+|--|--|--|--|--|--|
+|1.8 | 3.6.3 | 5.7.30 | 2.1.5.RELEASE
 ------
 
 * [效果展示](#效果展示)
@@ -40,23 +47,21 @@
 
 ## 注册
 
-<img src="https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/register.png" style="width:300px;height:auto" align="middle"/>
 
-<img src="https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/register1.png" style="width:300px;height:auto"/>
 
 ## 商品列表
 
-<img src="https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/list.png" style="width:600px;height:auto" align="center"/>
+
 
 ## 商品详情
 
-<img src="https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/item.png" style="width:300px;height:auto" align="center"/>
+
 
 ------
 
 # 项目架构
 
-<img src="https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/structure.png" style="width:auto;height:auto" align="center"/>
+
 
 ------
 
