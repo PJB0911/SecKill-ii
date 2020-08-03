@@ -8,11 +8,12 @@
 * [效果展示](#效果展示)
 * [项目架构](#项目架构)
 * [要点和细节](#要点和细节)
-  * [Data Object/Model/View Object](#data-objectmodelview-object)
-  * [通用返回对象](#通用返回对象)
-  * [处理错误信息](#处理错误信息)
-  * [异常拦截器处理自定义异常](#异常拦截器处理自定义异常)
-  * [跨域问题](#跨域问题)
+  * [基本设计](#基本设计)
+	* [Data Object/Model/View Object](#data-objectmodelview-object)
+	* [通用返回对象](#通用返回对象)
+	* [处理错误信息](#处理错误信息)
+    * [异常拦截器处理自定义异常](#异常拦截器处理自定义异常)
+    * [跨域问题](#跨域问题)
   * [优化校验规则](#优化校验规则)
     * [校验规则](#校验规则)
     * [封装校验结果](#封装校验结果)
@@ -108,7 +109,8 @@ IntelliJ IDEA 2019.3.3 x64
 
 ## 要点和细节
 
-### Data Object/Model/View Object
+### 基本设计
+#### Data Object/Model/View Object
 
 通常的做法是一张用户信息`user_info`表，包含了用户的**所有信息**。而企业级一般将用户的**敏感信息**从用户表从分离出来，比如密码，单独作为一张表。这样，就需要两个DAO来操作同一个用户，分别是`UserDAO`和`UserPasswordDAO`，这就是Data Object，从数据库直接映射出来的Object。
 
@@ -162,7 +164,7 @@ public class UserVO {
 
 同样，对于商品，**库存**是频繁操作的字段，也应该分离出来，成为两张表。一张`item`表，一张`stock`表。
 
-#### 通用返回对象
+##### 通用返回对象
 
 一般要使用一个统一的类，来返回后端处理的对象。不然默认给前端是对象的`toString()`方法，不易阅读，而且，不能包含是处理成功还是失败的信息。这个类就是`response.CommonReturnType`。
 
@@ -185,7 +187,7 @@ public class CommonReturnType {
 }
 ```
 
-### 处理错误信息
+#### 处理错误信息
 
 当程序内部出错后，Spring Boot会显示默认的出错页面。这些页面对于用户来说，一脸懵逼。需要将错误封装起来，通过`CommonReturnType`返回给用户，告诉用户哪里出错了，比如“密码输入错误”、“服务器内部错误”等等。
 
@@ -267,7 +269,7 @@ public class BizException extends Exception implements CommonError{
 throw new BizException(EmBizError.PARAMETER_VALIDATION_ERROR);
 ```
 
-### 异常拦截器处理自定义异常
+#### 异常拦截器处理自定义异常
 
 虽然上面抛出了自定义的`BizException`异常，但是SpringBoot还是和之前一样，返回500页面。这是由于，`BizException`被抛给了Tomcat，而Tomcat不知道如何处理`BizException`。所以，需要一个**拦截器**，拦截抛出的`BizException`。
 
@@ -294,7 +296,7 @@ public Object handlerException(HttpServletRequest request, Exception ex){
 }
 ```
 
-### 跨域问题
+#### 跨域问题
 
 由于浏览器的安全机制，JS只能访问与所在页面同一个域（相同协议、域名、端口）的内容，
 但是我们这里，需要通过Ajax请求，去请求后端接口并**返回数据**，这时候就会受到浏览器的安全限制，产生跨域问题（如果只是通过Ajax向后端服务器发送请求而不要求返回数据，是不受跨域限制的）。
