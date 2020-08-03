@@ -41,7 +41,7 @@ IntelliJ IDEA 2019.3.3 x64
 ### 开发环境				
 | JDK |Maven | Mysql |SpringBoot |
 |--|--|--|--|
-|1.8 | 3.2.2 | 5.5 | 1.5.9.RELEASE | 
+|1.8 | 3.6.3 | 5.7 | 2.1.5.RELEASE | 
 
 ### 项目简介
 本项目是高并发商城秒杀系统的基础项目，主要是模拟应对大并发场景下，如何完成商品的秒杀业务。针对秒杀场景下为应对大并发所做的优化见 SecKill-ii。
@@ -651,7 +651,4 @@ orderModel.setPromoId(promoId);
 - 下单操作多、缓慢
 - 浪涌流量如何解决
 
-------
-
-[【进阶项目笔记 上】](https://github.com/MaJesTySA/miaosha_Shop/blob/master/docs/advance_p1.md)，包含**云端部署**、**jmeter性能压测**、**Tomcat优化**、**分布式扩展**、**缓存优化**等。
 
