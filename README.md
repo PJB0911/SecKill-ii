@@ -1,10 +1,10 @@
-## 基于 SpringBoot 高并发商城秒杀系统（基础项目）
+# 基于 SpringBoot 高并发商城秒杀系统（基础项目）
 
 * [项目简介](#项目简介)
+  * [什么是秒杀](#什么是秒杀)
+  * [秒杀场景特点](#秒杀场景特点)
+  * [主要解决的问题](#主要解决的问题)
 * [效果展示](#效果展示)
-  * [注册](#注册)
-  * [商品列表](#商品列表)
-  * [商品详情](#商品详情)
 * [项目架构](#项目架构)
 * [要点和细节](#要点和细节)
   * [Data Object/Model/View Object](#data-objectmodelview-object)
@@ -35,28 +35,28 @@
 
 ------
 
-### 开发工具 
+## 开发工具 
 IntelliJ IDEA 2019.3.3 x64
 
-### 开发环境				
+## 开发环境				
 | JDK |Maven | Mysql |SpringBoot |
 |--|--|--|--|
 |1.8 | 3.6.3 | 5.7 | 2.1.5.RELEASE | 
 
-### 项目简介
+## 项目简介
 本项目是高并发商城秒杀系统的基础项目，主要是模拟应对大并发场景下，如何完成商品的秒杀业务。针对秒杀场景下为应对大并发所做的优化见 SecKill-ii。
 
-#### 什么是秒杀
+### 什么是秒杀
 
 秒杀场景一般会在电商网站举行一些活动或者节假日在12306网站上抢票时遇到。对于电商网站中一些稀缺或者特价商品，电商网站一般会在约定时间点对其进行限量销售，因为这些商品的特殊性，会吸引大量用户前来抢购，并且会在约定的时间点同时在秒杀页面进行抢购。
 
-#### 秒杀系统场景特点
+### 秒杀场景特点
 
 - 秒杀时大量用户会在同一时间同时进行抢购，网站瞬时访问流量激增。
 - 秒杀一般是访问请求数量远远大于库存数量，只有少部分用户能够秒杀成功。
 - 秒杀业务流程比较简单，一般就是下订单减库存。
 
-**主要解决的问题：**
+### 主要解决的问题：
 
 - 分布式会话
 - 用户登录、商品列表、商品详情、订单详情模块
@@ -68,31 +68,32 @@ IntelliJ IDEA 2019.3.3 x64
 
 
 
-### 效果展示
+## 效果展示
 
-#### 注册
-
-
-
-#### 商品列表
+**注册**
 
 
-
-#### 商品详情
-
+**获取验证码**
 
 
-------
+**商品列表**
 
-### 项目架构
+
+**商品详情**
 
 
 
 ------
 
-### 要点和细节
+## 项目架构
 
-#### Data Object/Model/View Object
+
+
+------
+
+## 要点和细节
+
+### Data Object/Model/View Object
 
 通常的做法是一张用户信息`user_info`表，包含了用户的**所有信息**。而企业级一般将用户的**敏感信息**从用户表从分离出来，比如密码，单独作为一张表。这样，就需要两个DAO来操作同一个用户，分别是`UserDAO`和`UserPasswordDAO`，这就是Data Object，从数据库直接映射出来的Object。
 
@@ -169,7 +170,7 @@ public class CommonReturnType {
 }
 ```
 
-#### 处理错误信息
+### 处理错误信息
 
 当程序内部出错后，Spring Boot会显示默认的出错页面。这些页面对于用户来说，一脸懵逼。需要将错误封装起来，通过`CommonReturnType`返回给用户，告诉用户哪里出错了，比如“密码输入错误”、“服务器内部错误”等等。
 
@@ -251,7 +252,7 @@ public class BizException extends Exception implements CommonError{
 throw new BizException(EmBizError.PARAMETER_VALIDATION_ERROR);
 ```
 
-#### 异常拦截器处理自定义异常
+### 异常拦截器处理自定义异常
 
 虽然上面抛出了自定义的`BizException`异常，但是SpringBoot还是和之前一样，返回500页面。这是由于，`BizException`被抛给了Tomcat，而Tomcat不知道如何处理`BizException`。所以，需要一个**拦截器**，拦截抛出的`BizException`。
 
@@ -278,7 +279,7 @@ public Object handlerException(HttpServletRequest request, Exception ex){
 }
 ```
 
-#### 跨域问题
+### 跨域问题
 
 由于浏览器的安全机制，JS只能访问与所在页面同一个域（相同协议、域名、端口）的内容，
 但是我们这里，需要通过Ajax请求，去请求后端接口并**返回数据**，这时候就会受到浏览器的安全限制，产生跨域问题（如果只是通过Ajax向后端服务器发送请求而不要求返回数据，是不受跨域限制的）。
@@ -289,9 +290,9 @@ public Object handlerException(HttpServletRequest request, Exception ex){
 
 这样就解决了Ajax跨域问题。
 
-#### 优化校验规则
+### 优化校验规则
 
-##### 校验规则
+#### 校验规则
 
 之前的入参，都是通过类似`if(StringUtils.isNotBlank(attr1)||StringUtils.isNotBlank(attr12))`的方式来校验的，很繁琐，对于像年龄这样的字段，不仅不能为空，其值还应该在一个范围内，那就更麻烦了。
 
@@ -309,7 +310,7 @@ private String name;
 private Integer age;
 ```
 
-##### 封装校验结果
+#### 封装校验结果
 
 当然，上面只是定义了**校验规则**，我们还需要**校验结果**，所以创建一个`validator.ValidationResult`类，来封装校验结果。
 
@@ -338,7 +339,7 @@ public class ValidationResult {
 }
 ```
 
-##### 创建校验器/使用校验
+#### 创建校验器/使用校验
 
 定义了校验规则和校验结果，那如何使用校验呢？新建一个`validator.ValidatorImpl`类，实现`InitializingBean`接口，为了能在这个Bean初始化的时候，初始化其中的`javax.validation.Validator`对象`validator`。
 
@@ -393,9 +394,9 @@ public void register(UserModel userModel) throws BizException {
 }
 ```
 
-#### 用户业务
+### 用户业务
 
-##### 短信发送业务
+#### 短信发送业务
 
 注册之前，输入手机号，请求后端`getOtp`接口。接口生成验证码后，发送到用户手机，并且用Map将验证码和手机绑定起来。企业级开发将Map放到分布式Redis里面，这里直接放到Session里面。
 
@@ -415,7 +416,7 @@ public CommonReturnType getOtp(@RequestParam(name="telphone")String telphone){
 }
 ```
 
-##### 注册业务
+#### 注册业务
 
 注册请求后端`UserController.register`接口，先进行短信验证，然后将注册信息封装到`UserModel`，调用`UserServiceImpl.register()`，先对注册信息进行入参校验，再将`UserModel`转成`UserDO`、`UserPasswordDO`存入到数据库。
 
@@ -423,7 +424,7 @@ public CommonReturnType getOtp(@RequestParam(name="telphone")String telphone){
 
 详见：`controller.UserController.register()`和`service.impl.UserServiceImpl.register()`。
 
-##### 登录业务
+#### 登录业务
 
 登录请求后端`UserController.login`接口，前端传过来`手机号`和`密码`。判空之后，调用`UserServiceImpl.validateLogin`方法，这个方法先通过`手机号`查询`user_info`表，看是否存在该用户，返回`UserDO`对象，再根据`UserDO.id`去`user_password`表中查询密码。如果密码匹配，则返回`UserModel`对象给`login`方法，最后`login`方法将`UserModel`对象存放到`Session`里面，即完成了登录。
 
@@ -446,23 +447,23 @@ public CommonReturnType login(@RequestParam(name = "telphone")String telphone,
 }
 ```
 
-#### 商品业务
+### 商品业务
 
-##### 商品添加业务
+#### 商品添加业务
 
 请求后端`ItemController.create`接口，传入商品创建的各种信息，封装到`ItemModel`对象，调用，`ItemServiceImpl.createItem`方法，进行入参校验，然后将`ItemModel`转换成`ItemDO`和`ItemStockDO`对象，分别写入数据库。
 
-##### 获取商品业务
+#### 获取商品业务
 
 请求后端`ItemController.get`接口，传入一个`Id`，通过`ItemServiceImpl.getItemById`先查询出`ItemDO`对象，再根据这个对象查出`ItemStockDO`对象，最后两个对象封装成一个`ItemModel`对象返回。
 
-##### 查询所有商品
+#### 查询所有商品
 
 请求后端`ItemController.list`接口，跟上面类似，查询所有商品。
 
-#### 交易业务
+### 交易业务
 
-##### 下单业务
+#### 下单业务
 
 请求后端`OrderController.createOrder`接口，传入商品Id`ItemId`和下单数量`amount`。接着在`Session`中获取用户登录信息，如果用户没有登录，直接抛异常。
 
@@ -507,7 +508,7 @@ if(!result)
 
 最后将订单入库，再让销量增加。
 
-##### 订单ID的生成
+#### 订单ID的生成
 
 订单ID**不能是简单的自增长**，而是**要符合一定的规则**，比如前8位，是年月日；中间6位为自增序列；最后2位为分库分表信息。
 
@@ -517,9 +518,9 @@ if(!result)
 2. 中间6位自增序列，需要新建一个`sequence_info`表，里面包含`name`、`current_value`、`step`三个字段。这个表及其对应的DO专门用来产生**自增序列**。
 3. `generatorOrderNo`方法需要将序列的更新信息写入到`sequence_info`表，而且该方法封装在`OrderServiceImpl.createOrder`方法中。如果`createOrder`执行失败，会进行回滚，默认情况下，`generatorOrderNo`也会回滚。而我们希望**生成ID的事务不受影响**，就算订单创建失败，ID还是继续生成，所以`generatorOrderNo`方法使用了`REQUIRES_NEW`事务传播方式。
 
-#### 秒杀业务
+### 秒杀业务
 
-##### 秒杀DO/Model和VO
+#### 秒杀DO/Model和VO
 
 `PromoDO`包含活动名称、起始、结束时间、参与活动的商品id、参与活动的价格。而我们希望在前端显示**活动的状态**，是开始？还是结束？还是正在进行中？所以`PromoModel`对象新加一个`status`字段，通过从数据库的`start_time`和`end_time`字段，与当前系统时间做比较，设置状态。
 
@@ -587,7 +588,7 @@ private ItemVO convertVOFromModel(ItemModel itemModel){
 
 下面我们会总结一下，获取商品信息的完整流程。
 
-##### 升级获取商品业务
+#### 升级获取商品业务
 
 之前获取的商品不包含秒杀活动信息，现在需要把活动信息添加进去。
 
@@ -595,7 +596,7 @@ private ItemVO convertVOFromModel(ItemModel itemModel){
 
 首先根据`Id`，调用`ItemServiceImpl.getItemById`查询出**商品信息**、**库存信息**、**秒杀活动信息**，一并封装到`ItemModel`中。然后再调用上面的`convertVOFromModel`，将这个`ItemModel`对象转换成`ItemVO`对象，包含了秒杀活动的信息，最后返回给前端以供显示。
 
-##### 活动商品下单业务
+#### 活动商品下单业务
 
 秒杀活动商品的下单，需要单独处理，以“秒杀价格”入下单库。所以`OrderDO`也需要添加`promoId`属性。
 
@@ -641,7 +642,7 @@ if(promoId!=null){
 orderModel.setPromoId(promoId);
 ```
 
-### 改进
+## 改进
 
 - 如何发现容量问题
 - 如何使得系统水平扩展
