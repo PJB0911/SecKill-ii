@@ -62,11 +62,11 @@ IntelliJ IDEA 2019.3.3 x64
 
 ### 秒杀架构设计理念
 
-- 限流： 鉴于只有少部分用户能够秒杀成功，所以要限制大部分流量，只允许少部分流量进入服务后端。
-- 削峰：对于秒杀系统瞬时会有大量用户涌入，所以在抢购一开始会有很高的瞬间峰值。高峰值流量是压垮系统很重要的原因，所以如何把瞬间的高流量变成一段时间平稳的流量也是设计秒杀系统很重要的思路。实现削峰的常用的方法有利用缓存和消息中间件等技术。
-- 异步处理：秒杀系统是一个高并发系统，采用异步处理模式可以极大地提高系统并发量，其实异步处理就是削峰的一种实现方式。
-- 内存缓存：秒杀系统最大的瓶颈一般都是数据库读写，由于数据库读写属于磁盘IO，性能很低，如果能够把部分数据或业务逻辑转移到内存缓存，效率会有极大地提升。
-- 水平拓展：当然如果我们想支持更多用户，更大的并发，最好就将系统设计成弹性可拓展的。拓展机器,像淘宝、京东等双十一活动时会增加大量机器应对交易高峰。
+- **限流**： 鉴于只有少部分用户能够秒杀成功，所以要限制大部分流量，只允许少部分流量进入服务后端。
+- **削峰**：对于秒杀系统瞬时会有大量用户涌入，所以在抢购一开始会有很高的瞬间峰值。高峰值流量是压垮系统很重要的原因，所以如何把瞬间的高流量变成一段时间平稳的流量也是设计秒杀系统很重要的思路。实现削峰的常用的方法有利用缓存和消息中间件等技术。
+- **异步处理**：秒杀系统是一个高并发系统，采用异步处理模式可以极大地提高系统并发量，其实异步处理就是削峰的一种实现方式。
+- **内存缓存**：秒杀系统最大的瓶颈一般都是数据库读写，由于数据库读写属于磁盘IO，性能很低，如果能够把部分数据或业务逻辑转移到内存缓存，效率会有极大地提升。
+- **水平拓展**：当然如果我们想支持更多用户，更大的并发，最好就将系统设计成弹性可拓展的。拓展机器,像淘宝、京东等双十一活动时会增加大量机器应对交易高峰。
 
 ### 需要解决的问题：
 
@@ -173,18 +173,18 @@ public class UserVO {
 }
 ```
 
-同样，对于商品，**库存**是频繁操作的字段，也应该分离出来，成为两张表。一张`item`表，一张`stock`表。
+同样，对于商品，**库存**是频繁操作的字段，也应该分离出来，成为两张表。一张`item`表，一张`item_stock`表。
 
 #### 通用返回对象
 
-一般要使用一个统一的类，来返回后端处理的对象。不然默认给前端是对象的`toString()`方法，不易阅读，而且，不能包含是处理成功还是失败的信息。这个类就是`response.CommonReturnType`。
+一般要使用一个统一的类，来返回后端处理的对象。不然默认给前端是对象的`toString()`方法，不易阅读，而且，不能包含是处理成功还是失败的信息。这个类就是`CommonReturnType`。
 
 ```java
 public class CommonReturnType {
     //有success和fail
     private String status;
-    //若status=success，data返回前端需要的JSON数据
-    //若fail，则data内使用通用的错误码格式
+    //若success，data返回前端需要的JSON数据；
+    //若fail，则data使用通用的错误码格式
     private Object data;
     public static CommonReturnType create(Object result){
         return CommonReturnType.create(result,"success");
@@ -200,7 +200,7 @@ public class CommonReturnType {
 
 #### 处理错误信息
 
-当程序内部出错后，Spring Boot会显示默认的出错页面。这些页面对于用户来说，一脸懵逼。需要将错误封装起来，通过`CommonReturnType`返回给用户，告诉用户哪里出错了，比如“密码输入错误”、“服务器内部错误”等等。
+当程序内部出错后，Spring Boot会显示默认的出错页面。这些页面对于用户来说不够友好。需要将错误封装起来，通过`CommonReturnType`返回给用户，告诉用户哪里出错了，比如“密码输入错误”、“服务器内部错误”等等。
 
 这些内容，封装到了`error`包下面的三个类里面。一个是`CommonError`接口，一个是枚举异常类`EmBizError`，一个是异常处理类`BizException`。
 
@@ -318,6 +318,9 @@ public Object handlerException(HttpServletRequest request, Exception ex){
 
 这样就解决了Ajax跨域问题。
 
+----------
+
+
 ### 优化校验规则
 
 #### 校验规则
@@ -422,11 +425,14 @@ public void register(UserModel userModel) throws BizException {
 }
 ```
 
+----------
+
+
 ### 用户业务
 
 #### 短信发送业务
 
-注册之前，输入手机号，请求后端`getOtp`接口。接口生成验证码后，发送到用户手机，并且用Map将验证码和手机绑定起来。企业级开发将Map放到分布式Redis里面，这里直接放到Session里面。
+注册之前，输入手机号，请求后端`getOtp`接口。接口生成验证码后，发送到用户手机，并且用Map将验证码和手机绑定起来。企业级开发将Map放到分布式Redis里面，这里直接放到Session里面，后续优化用redis。
 
 ```java
 @RequestMapping(value = "/getOtp",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})
@@ -448,7 +454,7 @@ public CommonReturnType getOtp(@RequestParam(name="telphone")String telphone){
 
 注册请求后端`UserController.register`接口，先进行短信验证，然后将注册信息封装到`UserModel`，调用`UserServiceImpl.register()`，先对注册信息进行入参校验，再将`UserModel`转成`UserDO`、`UserPasswordDO`存入到数据库。
 
-同时需要**注意**的是，`UserServiceImpl.register()`方法，设计到了数据库写操作，需要加上`@Transactional`注解，以事务的方式进行处理。
+同时需要**注意**的是，`UserServiceImpl.register()`方法，涉及到了数据库多表的写操作，需要加上`@Transactional`注解，以事务的方式进行处理。
 
 详见：`controller.UserController.register()`和`service.impl.UserServiceImpl.register()`。
 
@@ -466,14 +472,17 @@ public CommonReturnType login(@RequestParam(name = "telphone")String telphone,
        org.apache.commons.lang3.StringUtils.isEmpty(password))
         throw new BizException(EmBizError.PARAMETER_VALIDATION_ERROR);
     //调用Service的方法，验证手机号和密码
-    UserModel 
-      userModel=userService.validateLogin(telphone,this.EncodeByMD5(password));
+    UserModel userModel=userService.validateLogin(telphone,this.EncodeByMD5(password));
     //没有任何异常，则加入到用户登录成功的session内。这里先不用分布式的处理方式。
     this.httpServletRequest.getSession().setAttribute("IS_LOGIN",true);
     this.httpServletRequest.getSession().setAttribute("LOGIN_USER",userModel);
     return CommonReturnType.create(null);
 }
 ```
+
+
+----------
+
 
 ### 商品业务
 
@@ -489,11 +498,15 @@ public CommonReturnType login(@RequestParam(name = "telphone")String telphone,
 
 请求后端`ItemController.list`接口，跟上面类似，查询所有商品。
 
+
+----------
+
+
 ### 交易业务
 
 #### 下单业务
 
-请求后端`OrderController.createOrder`接口，传入商品Id`ItemId`和下单数量`amount`。接着在`Session`中获取用户登录信息，如果用户没有登录，直接抛异常。
+请求后端`OrderController.createOrder`接口，传入商品Id`ItemId`和下单数量`amount`。接着在`Session`中获取用户登录信息，如果用户没有登录，直接抛异常。前端接收到错误代码，将页面转移到`login.html`
 
 ```java
 @RequestMapping(value = "/createorder",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})
@@ -536,6 +549,7 @@ if(!result)
 
 最后将订单入库，再让销量增加。
 
+
 #### 订单ID的生成
 
 订单ID**不能是简单的自增长**，而是**要符合一定的规则**，比如前8位，是年月日；中间6位为自增序列；最后2位为分库分表信息。
@@ -545,6 +559,9 @@ if(!result)
 1. 前8位比较好实现，使用`LocalDateTime`，处理一下格式即可。
 2. 中间6位自增序列，需要新建一个`sequence_info`表，里面包含`name`、`current_value`、`step`三个字段。这个表及其对应的DO专门用来产生**自增序列**。
 3. `generatorOrderNo`方法需要将序列的更新信息写入到`sequence_info`表，而且该方法封装在`OrderServiceImpl.createOrder`方法中。如果`createOrder`执行失败，会进行回滚，默认情况下，`generatorOrderNo`也会回滚。而我们希望**生成ID的事务不受影响**，就算订单创建失败，ID还是继续生成，所以`generatorOrderNo`方法使用了`REQUIRES_NEW`事务传播方式。
+
+----------
+
 
 ### 秒杀业务
 
@@ -614,7 +631,7 @@ private ItemVO convertVOFromModel(ItemModel itemModel){
 }
 ```
 
-下面我们会总结一下，获取商品信息的完整流程。
+后续总结，获取商品信息的完整流程。
 
 #### 升级获取商品业务
 

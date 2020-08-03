@@ -71,7 +71,7 @@ public class ItemServiceImpl implements ItemService {
         ItemStockDO itemStockDO=itemStockDOMapper.selectByItemId(itemDO.getId());
         //将dataObject转换成Model
         ItemModel itemModel=convertModelFromDataObject(itemDO,itemStockDO);
-        //获取商品的活动信息
+        //获取商品的秒杀活动信息
         PromoModel promoModel= promoService.getPromoByItemId(itemModel.getId());
         if(promoModel!=null&&promoModel.getStatus()!=3){
             itemModel.setPromoModel(promoModel);
