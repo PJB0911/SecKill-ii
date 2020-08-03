@@ -48,7 +48,7 @@ IntelliJ IDEA 2019.3.3 x64
 |1.8 | 3.6.3 | 5.7 | 2.1.5.RELEASE | 
 
 ## 项目简介
-本项目是高并发商城秒杀系统的基础项目，主要是模拟应对大并发场景下，如何完成商品的秒杀业务。针对秒杀场景下为应对大并发所做的优化见 SecKill-ii。
+本项目是高并发商城秒杀系统的基础项目，主要是模拟应对大并发场景下，如何完成商品的秒杀业务。针对秒杀场景下为应对大并发所做的优化见 [SecKill-ii](https://github.com/PJB0911/SecKill-ii)。
 
 ### 什么是秒杀
 
@@ -697,4 +697,5 @@ orderModel.setPromoId(promoId);
 - 下单操作多、缓慢
 - 浪涌流量如何解决
 
+[性能优化SecKill-ii](https://github.com/PJB0911/SecKill-ii)
 
