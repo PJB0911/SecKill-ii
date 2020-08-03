@@ -7,6 +7,8 @@
   * [需要解决的问题](#需要解决的问题)
 * [效果展示](#效果展示)
 * [项目架构](#项目架构)
+  * [数据模型](#数据模型)
+  * [DAO/Service/Controller结构](#DAO/Service/Controller结构)
 * [要点和细节](#要点和细节)
   * [基本设计](#基本设计)
 	* [Data Object/Model/View Object](#data-objectmodelview-object)
@@ -104,13 +106,13 @@ IntelliJ IDEA 2019.3.3 x64
 
 ## 项目架构
 
-**数据模型**
+#### 数据模型
 
 ![Image text](https://github.com/PJB0911/SecKill-i/blob/master/images/models.png)
 
 ![Image text](https://github.com/PJB0911/SecKill-i/blob/master/images/datamodels.png)
 
-**DAO/Service/Controller结构**
+#### DAO/Service/Controller结构
 
 ![Image text](https://github.com/PJB0911/SecKill-i/blob/master/images/classmodels.png)
 
