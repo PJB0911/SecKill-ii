@@ -69,11 +69,12 @@ IntelliJ IDEA 2019.3.3 x64
 ### 需要解决的问题：
 
 - 业务功能：用户模块、商品模块、订单模块、秒杀模块
-- 云端部署，性能压测
-- 分布式扩展，Nginx反向代理，Tomcat优化
-- 多级缓存优化：页面缓存、数据热点缓存、库存缓存、缓存一致性（redis/guava/nginx lua）
-- 页面静态化(CDN)
-- 流量削峰
+- 云端部署，性能压测，Tomcat优化
+- 分布式扩展：Nginx反向代理，分布式会话
+- 查询性能优化：商品页面缓存、数据热点缓存（多级缓存：redis/guava/nginx lua）
+- 查询性能优化：页面静态化(CDN)，前后端分离
+- 交易性能优化：库存缓存、异步处理（RocketMQ）、缓存一致性
+- 流量削峰：秒杀令牌，秒杀大闸，队列泄洪
 - 接口安全：防刷限流
 
 ------
@@ -83,16 +84,16 @@ IntelliJ IDEA 2019.3.3 x64
 ## 效果展示
 
 **注册**
-
+![Image text](https://github.com/PJB0911/SecKill-i/blob/master/images/register.png)
 
 **获取验证码**
-
+![Image text](https://github.com/PJB0911/SecKill-i/blob/master/images/register_OTP.png)
 
 **商品列表**
-
+![Image text](https://github.com/PJB0911/SecKill-i/blob/master/images/list.png)
 
 **商品详情**
-
+![Image text](https://github.com/PJB0911/SecKill-i/blob/master/images/item.png)
 
 
 ------
@@ -100,10 +101,12 @@ IntelliJ IDEA 2019.3.3 x64
 ## 项目架构
 
 **数据模型**
+![Image text](https://github.com/PJB0911/SecKill-i/blob/master/images/models.png)
 
+![Image text](https://github.com/PJB0911/SecKill-i/blob/master/images/datamodels.png)
 
 **DAO/Service/Controller结构**
-
+![Image text](https://github.com/PJB0911/SecKill-i/blob/master/images/classmodels.png)
 
 ------
 
@@ -164,7 +167,7 @@ public class UserVO {
 
 同样，对于商品，**库存**是频繁操作的字段，也应该分离出来，成为两张表。一张`item`表，一张`stock`表。
 
-##### 通用返回对象
+#### 通用返回对象
 
 一般要使用一个统一的类，来返回后端处理的对象。不然默认给前端是对象的`toString()`方法，不易阅读，而且，不能包含是处理成功还是失败的信息。这个类就是`response.CommonReturnType`。
 
