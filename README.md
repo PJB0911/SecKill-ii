@@ -1,12 +1,13 @@
 ## 基于 SpringBoot+Maven+Mybatis 高并发商城秒杀系统（基础项目）
 
-## 开发工具 
+
+# 开发工具 
 IntelliJ IDEA 2019.3.3 x64
 
-## 开发环境				
-| JDK |Maven | Mysql |SpringBoot | redis |RabbitMQ|
-|--|--|--|--|--|--|
-|1.8 | 3.2.2 | 5.5 | 1.5.9.RELEASE | 3.2 |3.7.14| 
+# 开发环境				
+| JDK |Maven | Mysql |SpringBoot |
+|--|--|--|--|
+|1.8 | 3.2.2 | 5.5 | 1.5.9.RELEASE | 
 ------
 
 * [效果展示](#效果展示)
