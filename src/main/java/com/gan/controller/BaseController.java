@@ -1,17 +1,5 @@
 package com.gan.controller;
 
-import com.gan.error.BizException;
-import com.gan.error.EmBizError;
-import com.gan.response.CommonReturnType;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * 业务异常处理的BaseController
  */
@@ -25,7 +13,7 @@ public class BaseController {
      * @param ex   Exception
      * @return 错误信息
      */
-    @ExceptionHandler(Exception.class)
+ /*   @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public Object handlerException(HttpServletRequest request, Exception ex) {
@@ -42,5 +30,5 @@ public class BaseController {
             ex.printStackTrace();
         }
         return CommonReturnType.create(responseData, "fail");
-    }
+    }*/
 }
