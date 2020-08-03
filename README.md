@@ -84,15 +84,19 @@ IntelliJ IDEA 2019.3.3 x64
 ## 效果展示
 
 **注册**
+
 ![Image text](https://github.com/PJB0911/SecKill-i/blob/master/images/register.png)
 
 **获取验证码**
+
 ![Image text](https://github.com/PJB0911/SecKill-i/blob/master/images/register_OTP.png)
 
 **商品列表**
+
 ![Image text](https://github.com/PJB0911/SecKill-i/blob/master/images/list.png)
 
 **商品详情**
+
 ![Image text](https://github.com/PJB0911/SecKill-i/blob/master/images/item.png)
 
 
@@ -101,11 +105,13 @@ IntelliJ IDEA 2019.3.3 x64
 ## 项目架构
 
 **数据模型**
+
 ![Image text](https://github.com/PJB0911/SecKill-i/blob/master/images/models.png)
 
 ![Image text](https://github.com/PJB0911/SecKill-i/blob/master/images/datamodels.png)
 
 **DAO/Service/Controller结构**
+
 ![Image text](https://github.com/PJB0911/SecKill-i/blob/master/images/classmodels.png)
 
 ------
