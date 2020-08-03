@@ -1,4 +1,4 @@
-## 基于 SpringBoot+Maven+Mybatis 高并发商城秒杀系统（基础项目）
+# 基于 SpringBoot 高并发商城秒杀系统（基础项目）
 
 
 ## 开发工具 
