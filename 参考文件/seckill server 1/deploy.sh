@@ -1,0 +1,1 @@
+nohup java -Xms400m -Xmx400m -XX:NewSize=200m -XX:MaxNewSize=200m -jar seckill.jar --spring.config.additional-location=/usr/project/seckill/application.properties
