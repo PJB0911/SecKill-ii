@@ -1,8 +1,10 @@
 package com.gan.controller;
 
+
 import com.gan.controller.viewobject.ItemVO;
 import com.gan.error.BizException;
 import com.gan.response.CommonReturnType;
+import com.gan.service.CacheService;
 import com.gan.service.ItemService;
 import com.gan.service.model.ItemModel;
 import org.joda.time.format.DateTimeFormat;
@@ -28,6 +30,8 @@ public class ItemController extends BaseController {
     private ItemService itemService;
     @Autowired
     private RedisTemplate redisTemplate;
+    @Autowired
+    private CacheService cacheService;
     /**
      * 创建商品
      * @param title 商品名称
@@ -68,7 +72,7 @@ public class ItemController extends BaseController {
     public CommonReturnType getItem(@RequestParam(name = "id") Integer id) {
         ItemModel itemModel = null;
         //第一级：先查询本地缓存
-//        itemModel = (ItemModel) cacheService.getFromCommonCache("item_" + id);
+        itemModel = (ItemModel) cacheService.getFromCommonCache("item_" + id);
         if (itemModel == null) {
             //第二级：查询redis缓存
             itemModel = (ItemModel) redisTemplate.opsForValue().get("item_" + id);
@@ -81,7 +85,7 @@ public class ItemController extends BaseController {
                 redisTemplate.expire("item_" + id, 10, TimeUnit.MINUTES);
             }
             //填充本地缓冲
-//            cacheService.setCommonCache("item_" + id, itemModel);
+            cacheService.setCommonCache("item_" + id, itemModel);
         }
         ItemVO itemVO = convertVOFromModel(itemModel);
         return CommonReturnType.create(itemVO);

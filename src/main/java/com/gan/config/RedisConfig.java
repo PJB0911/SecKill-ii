@@ -3,8 +3,8 @@ package com.gan.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.gan.serializer.JodaDateTimeDeserializer;
-import com.gan.serializer.JodaDateTimeJSONSerializer;
+import com.gan.serializer.JodaDateTimeJsonDeserializer;
+import com.gan.serializer.JodaDateTimeJsonSerializer;
 import org.joda.time.DateTime;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -40,8 +40,8 @@ public class RedisConfig {
         //解决日期的序列化格式
         ObjectMapper objectMapper = new ObjectMapper();
         SimpleModule simpleModule = new SimpleModule();
-        simpleModule.addSerializer(DateTime.class, new JodaDateTimeJSONSerializer());
-        simpleModule.addDeserializer(DateTime.class, new JodaDateTimeDeserializer());
+        simpleModule.addSerializer(DateTime.class, new JodaDateTimeJsonSerializer());
+        simpleModule.addDeserializer(DateTime.class, new JodaDateTimeJsonDeserializer());
 
         objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
         objectMapper.registerModule(simpleModule);

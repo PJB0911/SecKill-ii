@@ -10,7 +10,10 @@ import org.joda.time.format.DateTimeFormatter;
 
 import java.io.IOException;
 
-public class JodaDateTimeDeserializer extends JsonDeserializer<DateTime> {
+/**
+ * 解析序列化的DateTime格式 yyyy-MM-dd HH:mm:ss
+ */
+public class JodaDateTimeJsonDeserializer extends JsonDeserializer<DateTime> {
     @Override
     public DateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
         String dateString = jsonParser.readValueAs(String.class);
