@@ -2,12 +2,13 @@ package com.gan.service.model;
 
 import org.joda.time.DateTime;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 /**
  * 秒杀活动model
  */
-public class PromoModel {
+public class PromoModel implements Serializable {
     private Integer id;
     //秒杀活动名称
     private String promoName;

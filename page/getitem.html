@@ -90,9 +90,15 @@
     //下单
     jQuery(document).ready(function () {
         $("#createorder").on("click",function () {
+            var token = window.localStorage["token"];
+            if (token == null) {
+                alert("没有登录，不能下单");
+                window.location.href = "login.html";
+                return false;
+            }
             $.ajax({
                 type: "POST",
-                url: "http://"+g_host+"/order/createorder",
+                url: "http://" + g_host + "/order/createorder?token=" + token,
                 data: {
                     "itemId":global_itemVO.id,
                     "amount":1,

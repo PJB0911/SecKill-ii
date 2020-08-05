@@ -9,15 +9,17 @@ import com.gan.service.UserService;
 import com.gan.service.model.UserModel;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import sun.misc.BASE64Encoder;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 用户Controller
@@ -28,8 +30,10 @@ import java.util.Random;
 public class UserController extends BaseController {
     @Autowired
     private UserService userService;
+//    @Autowired
+//    private HttpServletRequest httpServletRequest;
     @Autowired
-    private HttpServletRequest httpServletRequest;
+    private RedisTemplate redisTemplate;
 
     /**
      * 用户注册接口
@@ -51,7 +55,8 @@ public class UserController extends BaseController {
                                      @RequestParam(name = "age") Integer age,
                                      @RequestParam(name = "password") String password) throws BizException, UnsupportedEncodingException, NoSuchAlgorithmException {
         //验证手机号和对应的otpCode相符合
-        String inSessionOtpCode = (String) this.httpServletRequest.getSession().getAttribute(telphone);
+        //String inSessionOtpCode = (String) this.httpServletRequest.getSession().getAttribute(telphone);
+        String inSessionOtpCode=(String) redisTemplate.opsForValue().get(telphone);
         //工具类的equals已经进行了判空的处理
         if (!StringUtils.equals(otpCode, inSessionOtpCode)) {
             throw new BizException(EmBizError.PARAMETER_VALIDATION_ERROR, "短信验证码不符合！");
@@ -70,6 +75,7 @@ public class UserController extends BaseController {
 
     /**
      * 用户登录接口
+     *
      * @param telphone 手机号码
      * @param password 密码
      * @return 用户登录成功信息
@@ -83,10 +89,21 @@ public class UserController extends BaseController {
             throw new BizException(EmBizError.PARAMETER_VALIDATION_ERROR);
         //用户登录服务,用来校验用户登陆是否合法
         UserModel userModel = userService.validateLogin(telphone, this.EncodeByMD5(password));
-        //没有任何异常，则加入到用户登录成功的session内。暂时不用分布式的处理方式。
-        this.httpServletRequest.getSession().setAttribute("IS_LOGIN", true); //登陆凭证
-        this.httpServletRequest.getSession().setAttribute("LOGIN_USER", userModel);
-        return CommonReturnType.create(null);
+         /*
+            没有任何异常，则加入到用户登录成功的session内。该session会发送到redis服务器
+            this.httpServletRequest.getSession().setAttribute("IS_LOGIN",true);
+            this.httpServletRequest.getSession().setAttribute("LOGIN_USER",userModel);
+        */
+        //改用Token方式，将登陆信息和登录凭证一起存入redis中
+        //生成Token，UUID保证唯一性
+        String uuidToken = UUID.randomUUID().toString();
+        uuidToken = uuidToken.replace("-", "");
+        //建立Token与用户登录态的联系
+        redisTemplate.opsForValue().set(uuidToken, userModel);
+        //设置超时时间
+        redisTemplate.expire(uuidToken, 1, TimeUnit.HOURS);
+        //下发Token
+        return CommonReturnType.create(uuidToken);
     }
 
     /**
@@ -103,8 +120,12 @@ public class UserController extends BaseController {
         int randomInt = random.nextInt(99999);
         randomInt += 10000;
         String optCode = String.valueOf(randomInt);
-        //将验证码与用户手机号进行关联，这里使用HttpSession
-        httpServletRequest.getSession().setAttribute(telphone, optCode);
+        //将验证码与用户手机号进行关联，使用HttpSession储存
+        //httpServletRequest.getSession().setAttribute(telphone, optCode);
+        //改用redis储存验证码
+        redisTemplate.opsForValue().set(telphone,optCode);
+        //设置超时时间
+        redisTemplate.expire(telphone, 15, TimeUnit.MINUTES);
         //将OPT验证码通过短信通道发送给用户，省略
         System.out.println("telphone=" + telphone + "& otpCode=" + optCode);
         return CommonReturnType.create(null);

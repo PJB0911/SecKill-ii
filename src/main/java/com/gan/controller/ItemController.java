@@ -8,11 +8,13 @@ import com.gan.service.model.ItemModel;
 import org.joda.time.format.DateTimeFormat;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -24,7 +26,8 @@ import java.util.stream.Collectors;
 public class ItemController extends BaseController {
     @Autowired
     private ItemService itemService;
-
+    @Autowired
+    private RedisTemplate redisTemplate;
     /**
      * 创建商品
      * @param title 商品名称
@@ -63,7 +66,23 @@ public class ItemController extends BaseController {
     @RequestMapping(value = "/get", method = {RequestMethod.GET})
     @ResponseBody
     public CommonReturnType getItem(@RequestParam(name = "id") Integer id) {
-        ItemModel itemModel = itemService.getItemById(id);
+        ItemModel itemModel = null;
+        //第一级：先查询本地缓存
+//        itemModel = (ItemModel) cacheService.getFromCommonCache("item_" + id);
+        if (itemModel == null) {
+            //第二级：查询redis缓存
+            itemModel = (ItemModel) redisTemplate.opsForValue().get("item_" + id);
+            //如果不存在，就执行下游操作，到数据库查询
+            if (itemModel == null) {
+                itemModel = itemService.getItemById(id);
+                //设置itemModel到redis服务器
+                redisTemplate.opsForValue().set("item_" + id, itemModel);
+                //设置失效时间
+                redisTemplate.expire("item_" + id, 10, TimeUnit.MINUTES);
+            }
+            //填充本地缓冲
+//            cacheService.setCommonCache("item_" + id, itemModel);
+        }
         ItemVO itemVO = convertVOFromModel(itemModel);
         return CommonReturnType.create(itemVO);
     }
