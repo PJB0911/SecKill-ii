@@ -55,7 +55,7 @@ public class OrderServiceImpl implements OrderService {
                 throw new  BizException(EmBizError.PARAMETER_VALIDATION_ERROR,"活动还未开始");
             }
         }
-        //2. 落单减库存 or 支付减库存。这里是落单减库存
+        //2. 落单减库存
         boolean result=itemService.decreaseStock(itemId,amount);
         if(!result)
             throw new BizException(EmBizError.STOCK_NOT_ENOUGH);
