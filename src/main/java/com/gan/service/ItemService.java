@@ -44,6 +44,16 @@ public interface ItemService {
      */
     boolean decreaseStock(Integer itemId, Integer amount);
 
+
+    /**
+     * 库存增加
+     *
+     * @param itemId 商品id
+     * @param amount 商品数量
+     * @return 是否增加成功
+     */
+    boolean increaseStock(Integer itemId, Integer amount);
+
     /**
      * 增加销量
      *
@@ -51,6 +61,32 @@ public interface ItemService {
      * @param amount 商品数量
      */
     void increaseSales(Integer itemId, Integer amount);
+
+
+
+    /**
+     * 优化：Item及Promo model缓存模型;
+     * 验证item及promo是否有效
+     * @param id 商品id
+     * @return  商品Model
+     */
+    ItemModel getItemByIdInCache(Integer id);
+
+    /**
+     * 异步更新库存
+     * @param itemId 商品id
+     * @param amount 商品数量
+     * @return  是否更新成功
+     */
+    boolean asyncDecreaseStock(Integer itemId, Integer amount);
+
+    /**
+     * 初始化库存流水
+     * @param itemId 商品id
+     * @param amount 商品数量
+     * @return 库存流水id
+     */
+    String initStockLog(Integer itemId, Integer amount);
 }
 
 

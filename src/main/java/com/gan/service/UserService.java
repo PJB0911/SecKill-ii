@@ -30,4 +30,11 @@ public interface UserService {
      */
 
     UserModel validateLogin(String telphone, String encrptPassword) throws BizException;
+
+    /**
+     * 优化：通过缓存获取用户对象
+     * @param id 用户id
+     * @return userModel对象
+     */
+    UserModel getUserByIdInCache(Integer id);
 }

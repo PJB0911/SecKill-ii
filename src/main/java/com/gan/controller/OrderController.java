@@ -2,9 +2,13 @@ package com.gan.controller;
 
 import com.gan.error.BizException;
 import com.gan.error.EmBizError;
+import com.gan.mq.MqProducer;
 import com.gan.response.CommonReturnType;
+import com.gan.service.ItemService;
 import com.gan.service.OrderService;
+import com.gan.service.PromoService;
 import com.gan.service.model.UserModel;
+import com.google.common.util.concurrent.RateLimiter;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -12,6 +16,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.concurrent.ExecutorService;
 
 /**
  * 订单Controller
@@ -23,10 +28,17 @@ public class OrderController extends BaseController {
     @Autowired
     private OrderService orderService;
     @Autowired
+    private ItemService itemService;
+    @Autowired
+    private PromoService promoService;
+    private ExecutorService executorService;
+    @Autowired
     private HttpServletRequest httpServletRequest;
     @Autowired
     private RedisTemplate redisTemplate;
-
+    @Autowired
+    private MqProducer mqProducer;
+    private RateLimiter orderCreateRateLimiter;
     /**
      * 下单接口
      *
@@ -56,7 +68,16 @@ public class OrderController extends BaseController {
         if (userModel == null) {
             throw new BizException(EmBizError.USER_NOT_LOGIN, "登录过期，请重新登录");
         }
-        orderService.createOrder(userModel.getId(), itemId, promoId, amount);
+
+        //非消息事务的处理方式
+        //orderService.createOrder(userModel.getId(), itemId, promoId, amount);
+
+        //加入库存流水init状态
+        String stockLogId = itemService.initStockLog(itemId, amount);
+        //消息事务处理方法
+        if (!mqProducer.transactionAsyncReduceStock(userModel.getId(), itemId, promoId, amount, stockLogId)) {
+            throw new BizException(EmBizError.UNKNOWN_ERROR, "下单失败");
+        }
         return CommonReturnType.create(null);
     }
 }

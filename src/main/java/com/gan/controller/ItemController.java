@@ -6,6 +6,7 @@ import com.gan.error.BizException;
 import com.gan.response.CommonReturnType;
 import com.gan.service.CacheService;
 import com.gan.service.ItemService;
+import com.gan.service.PromoService;
 import com.gan.service.model.ItemModel;
 import org.joda.time.format.DateTimeFormat;
 import org.springframework.beans.BeanUtils;
@@ -32,6 +33,8 @@ public class ItemController extends BaseController {
     private RedisTemplate redisTemplate;
     @Autowired
     private CacheService cacheService;
+    @Autowired
+    private PromoService promoService;
     /**
      * 创建商品
      * @param title 商品名称
@@ -90,6 +93,19 @@ public class ItemController extends BaseController {
         ItemVO itemVO = convertVOFromModel(itemModel);
         return CommonReturnType.create(itemVO);
     }
+
+    /**
+     * 发布秒杀活动
+     * @param id 秒杀活动id
+     * @return  返回给前端的秒杀活动信息
+     */
+    @RequestMapping(value = "/publishpromo", method = {RequestMethod.GET})
+    @ResponseBody
+    public CommonReturnType publishPromo(@RequestParam(name = "id") Integer id) {
+        promoService.publishPromo(id);
+        return CommonReturnType.create(null);
+    }
+
 
     /**
      * 商品列表页面浏览

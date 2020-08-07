@@ -17,9 +17,10 @@ public interface OrderService {
      * @param itemId  商品id
      * @param promoId 秒杀活动id
      * @param amount  购买数量
+     * @param stockLogId  库存流水id
      * @return 商品model
      * @throws BizException
      */
-    OrderModel createOrder(Integer userId, Integer itemId, Integer promoId, Integer amount) throws BizException;
+    OrderModel createOrder(Integer userId, Integer itemId, Integer promoId, Integer amount, String stockLogId) throws BizException;
 
 }
