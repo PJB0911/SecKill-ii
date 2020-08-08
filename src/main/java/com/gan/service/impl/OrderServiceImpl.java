@@ -13,7 +13,6 @@ import com.gan.service.OrderService;
 import com.gan.service.UserService;
 import com.gan.service.model.ItemModel;
 import com.gan.service.model.OrderModel;
-import com.gan.service.model.UserModel;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -41,6 +40,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderModel createOrder(Integer userId, Integer itemId, Integer promoId, Integer amount, String stockLogId) throws BizException {
+    /*  generateSecondKillToken
+        因为PromoService.generateSecondKillToken()方法在生成promoToken的时候已验证，下单业务不需要验证，解耦。
         //1. 校验下单状态。下单商品是否存在，用户是否合法，购买数量是否正确
         // 商品无缓存:
         //ItemModel itemModel=itemService.getItemById(itemId);
@@ -63,8 +64,9 @@ public class OrderServiceImpl implements OrderService {
             } else if (itemModel.getPromoModel().getStatus() != 2) {
                 throw new BizException(EmBizError.PARAMETER_VALIDATION_ERROR, "活动还未开始");
             }
-        }
+        }*/
 
+        ItemModel itemModel = itemService.getItemByIdInCache(itemId);
         if (amount <= 0 || amount > 99)
             throw new BizException(EmBizError.PARAMETER_VALIDATION_ERROR, "数量信息不存在");
 
@@ -94,8 +96,8 @@ public class OrderServiceImpl implements OrderService {
         //销量增加
         itemService.increaseSales(itemId, amount);
 
-     /*   //优化—事务型消息第一步：异步更新库存，将发送消息从扣减redis里面独立出来，
-        //在入库、销量增加后再发送消息。但事务提交过程发生异常，无法保证一致性，解决方法见registerSynchronization
+     /*   优化—事务型消息第一步：异步更新库存，将发送消息从ItemService.decreaseStock() 里面独立出来，在入库、销量增加后再发送消息。
+          但事务提交过程发生异常，无法保证一致性，解决方法见registerSynchronization
         boolean mqResult = itemService.asyncDecreaseStock(itemId, amount);
         if (!mqResult) {
             //回滚redis 库存
@@ -103,7 +105,8 @@ public class OrderServiceImpl implements OrderService {
             throw new BizException(EmBizError.MQ_SEND_FAIL);
         }*/
 
-      /*  //优化—事务型消息第一步：能解决事务提交过程异常的问题，但是如果消息发送失败，则无能为力
+      /*  优化—事务型消息第一步：能解决事务提交过程异常的问题，但是如果消息发送失败，则无能为力。
+          解决方法见MqProduce事务消息 transactionAsyncReduceStock（） 和 executeLocalTransaction（），将下单和发送消息合在一起
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
             @Override
             public void afterCommit() {

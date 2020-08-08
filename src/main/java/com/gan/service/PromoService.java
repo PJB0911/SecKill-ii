@@ -28,5 +28,5 @@ public interface PromoService {
      * @param userId 用户id
      * @return 秒杀令牌
      */
-//    String generateSecondKillToken(Integer promoId, Integer itemId, Integer userId);
+    String generateSecondKillToken(Integer promoId, Integer itemId, Integer userId);
 }

@@ -99,7 +99,7 @@ public class ItemServiceImpl implements ItemService {
 
         // 库存扣减缓存优化,result表示扣减后的库存
         long result = redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount.intValue() * -1);
-        if (result >= 0) {
+        if (result > 0) {
                /*   事务性消息更改后的版本，在整个下单业务执行完毕后，再发送消息。
                //考虑售罄的情况
                //抽离了发送异步消息的逻辑,decreaseStock() 负责扣减Redis库存，不发送异步消息。
@@ -109,6 +109,10 @@ public class ItemServiceImpl implements ItemService {
                     redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount.intValue());
                     return false;
                 }*/
+            return true;
+        } else if (result == 0) {
+            //打上售罄标识
+            redisTemplate.opsForValue().set("promo_item_stock_invalid_" + itemId, "true");
             return true;
         } else {
             //Redis扣减失败，回滚
@@ -127,8 +131,6 @@ public class ItemServiceImpl implements ItemService {
     public boolean asyncDecreaseStock(Integer itemId, Integer amount) {
         return mqProducer.asyncReduceStock(itemId, amount);
     }
-
-
 
 
     @Override

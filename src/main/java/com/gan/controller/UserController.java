@@ -56,6 +56,7 @@ public class UserController extends BaseController {
                                      @RequestParam(name = "password") String password) throws BizException, UnsupportedEncodingException, NoSuchAlgorithmException {
         //验证手机号和对应的otpCode相符合
         //String inSessionOtpCode = (String) this.httpServletRequest.getSession().getAttribute(telphone);
+        //改用redis
         String inSessionOtpCode=(String) redisTemplate.opsForValue().get(telphone);
         //工具类的equals已经进行了判空的处理
         if (!StringUtils.equals(otpCode, inSessionOtpCode)) {
@@ -89,11 +90,11 @@ public class UserController extends BaseController {
             throw new BizException(EmBizError.PARAMETER_VALIDATION_ERROR);
         //用户登录服务,用来校验用户登陆是否合法
         UserModel userModel = userService.validateLogin(telphone, this.EncodeByMD5(password));
-         /*
-            没有任何异常，则加入到用户登录成功的session内。该session会发送到redis服务器
-            this.httpServletRequest.getSession().setAttribute("IS_LOGIN",true);
-            this.httpServletRequest.getSession().setAttribute("LOGIN_USER",userModel);
-        */
+             /*
+                没有任何异常，则加入到用户登录成功的session内。该session会发送到redis服务器
+                this.httpServletRequest.getSession().setAttribute("IS_LOGIN",true);
+                this.httpServletRequest.getSession().setAttribute("LOGIN_USER",userModel);
+            */
         //改用Token方式，将登陆信息和登录凭证一起存入redis中
         //生成Token，UUID保证唯一性
         String uuidToken = UUID.randomUUID().toString();
@@ -120,8 +121,10 @@ public class UserController extends BaseController {
         int randomInt = random.nextInt(99999);
         randomInt += 10000;
         String optCode = String.valueOf(randomInt);
+
         //将验证码与用户手机号进行关联，使用HttpSession储存
         //httpServletRequest.getSession().setAttribute(telphone, optCode);
+
         //改用redis储存验证码
         redisTemplate.opsForValue().set(telphone,optCode);
         //设置超时时间

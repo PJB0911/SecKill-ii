@@ -73,6 +73,14 @@
         </button>
     </div>
 
+    <div id="verifyDiv" style="display: none;" class="form-actions">
+        <input type="text" id="verifyContent" value=""/>
+        <img src=""/>
+        <button class="btn blue" id="verifyBtn" type="submit">
+            验证
+        </button>
+    </div>
+
     <input type="hidden" id="isInit" value="0"/>
 
 </div>
@@ -131,41 +139,83 @@
         });
     }
 
+
     //下单
     jQuery(document).ready(function () {
-        $("#createorder").on("click", function () {
+        $("#verifyBtn").on("click", function () {
             //获取token
             var token = window.localStorage["token"];
-            if (token == null) {
-                alert("没有登录，不能下单");
-                window.location.href = "login.html";
-                return false;
+            //获取输入的验证码
+            var verifyCode= $("#verifyContent").val();
+            if(verifyCode == "" || verifyCode.length<4 ) {
+                alert("请输入完整的验证码");
+                return;
             }
+            //先调用generatortoken生成令牌
             $.ajax({
                 type: "POST",
-                url: "http://" + g_host + "/order/createorder?token=" + token, //携带token
+                url: "http://" + g_host + "/order/generatetoken?token=" + token,
                 data: {
                     "itemId": global_itemVO.id,
-                    "amount": 1,
-                    "promoId": global_itemVO.promoId
+                    "promoId": global_itemVO.promoId,
+                    "verifyCode": $("#verifyContent").val()
                 },
                 contentType: "application/x-www-form-urlencoded",
                 xhrFields: {withCredentials: true},
                 success: function (data) {
                     if (data.status == "success") {
-                        alert("下单成功!")
-                        window.location.reload();
+                        var promoToken = data.data;
+                        //获取令牌成功再下单
+                        $.ajax({
+                            type: "POST",
+                            url: "http://" + g_host + "/order/createorder?token=" + token,
+                            data: {
+                                "itemId": global_itemVO.id,
+                                "amount": 1,
+                                "promoId": global_itemVO.promoId,
+                                "promoToken": promoToken
+                            },
+                            contentType: "application/x-www-form-urlencoded",
+                            xhrFields: {withCredentials: true},
+                            success: function (data) {
+                                if (data.status == "success") {
+                                    alert("下单成功!")
+                                    window.location.reload();
+                                } else {
+                                    alert("下单失败，原因为" + data.data.errMsg);
+                                    if (data.data.errCode == 20003) {
+                                        window.location.href = "login.html";
+                                    }
+                                }
+                            },
+                            error: function (data) {
+                                alert("下单失败，原因为" + data.responseText);
+                            }
+                        });
                     } else {
-                        alert("下单失败，原因为" + data.data.errMsg);
+                        alert("获取令牌失败，原因为" + data.data.errMsg);
                         if (data.data.errCode == 20003) {
                             window.location.href = "login.html";
                         }
                     }
                 },
                 error: function (data) {
-                    alert("下单失败，原因为" + data.data.errMsg)
+                    alert("获取令牌失，原因为" + data.responseText);
                 }
             });
+
+        });
+
+
+        $("#createorder").on("click", function () {
+            var token = window.localStorage["token"];
+            if (token == null) {
+                alert("没有登录，不能下单");
+                window.location.href = "login.html";
+                return false;
+            }
+            $("#verifyDiv img").attr("src", "http://" + g_host + "/order/generateverifycode?token=" + token);
+            $("#verifyDiv").show();
         });
         //初始化页面
         initView();
