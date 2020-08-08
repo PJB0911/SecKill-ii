@@ -177,7 +177,7 @@ public class OrderController extends BaseController {
         //orderService.createOrder(userModel.getId(), itemId, promoId, amount);
 
         //同步调用线程池的submit方法
-        //拥塞窗口为20的等待队列，用来泄洪
+        //拥塞窗口为20的等待队列，用来流量泄洪
         Future<Object> future = executorService.submit(new Callable<Object>() {
             @Override
             public Object call() throws Exception {
