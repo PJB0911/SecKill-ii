@@ -80,65 +80,67 @@
     * [phantomJS实现全页面静态化](#phantomjs实现全页面静态化)
   * [小结](#小结-4)
   * [接下来的优化方向](#接下来的优化方向-4)
-* [优化效果总结](#优化效果总结)
+* [查询优化效果总结](#查询优化效果总结)
   * [Tomcat优化](#Tomcat优化)
   * [分布式扩展优化](#分布式扩展优化-1)
   * [缓存优化](#缓存优化)
   * [CDN优化](#CDN优化)
-- [交易优化之缓存库存](#交易优化之缓存库存)
-  - [交易接口瓶颈](#交易接口瓶颈)
-  - [交易验证优化](#交易验证优化)
-    - [用户校验缓存优化](#用户校验缓存优化)
-    - [活动校验缓存优化](#活动校验缓存优化)
-    - [缓存优化后的效果](#缓存优化后的效果)
-  - [库存扣减优化](#库存扣减优化)
-    - [索引优化](#索引优化)
-    - [库存扣减缓存优化](#库存扣减缓存优化)
-      - [RocketMQ](#rocketmq)
-      - [同步数据库库存到缓存](#同步数据库库存到缓存)
-      - [同步缓存库存到数据库（异步扣减库存）](#同步缓存库存到数据库（异步扣减库存）)
-      - [异步扣减库存存在的问题](#异步扣减库存存在的问题)
-  - [小结](#小结)
-  - [接下来的优化方向](#接下来的优化方向)
-- [交易优化之事务型消息](#交易优化之事务型消息)
-  - [异步消息发送时机问题](#异步消息发送时机问题)
-    - [解决方法](#解决方法)
-  - [事务提交问题](#事务提交问题)
-    - [解决方法](#解决方法-1)
-  - [事务型消息](#事务型消息)
-    - [更新下单流程](#更新下单流程)
-  - [小结](#小结-1)
-  - [接下来的优化方向](#接下来的优化方向-1)
-- [库存流水](#库存流水)
-  - [下单操作的处理](#下单操作的处理)
-  - [UNKNOWN状态处理](#unknown状态处理)
-  - [库存售罄处理](#库存售罄处理)
-  - [小结](#小结-2)
-    - [可以改进的地方](#可以改进的地方)
-  - [接下来的优化方向](#接下来的优化方向-2)
-- [流量削峰](#流量削峰)
-  - [业务解耦—秒杀令牌](#业务解耦秒杀令牌)
-  - [限流—令牌大闸](#限流令牌大闸)
-    - [令牌大闸限流缺点](#令牌大闸限流缺点)
-  - [限流—队列泄洪](#限流队列泄洪)
-  - [小结](#小结-3)
-  - [接下来的优化方向](#接下来的优化方向-3)
-- [防刷限流](#防刷限流)
-  - [验证码技术](#验证码技术)
-  - [限流方案—限并发](#限流方案限并发)
-  - [限流方案—令牌桶/漏桶](#限流方案令牌桶漏桶)
-    - [令牌桶](#令牌桶)
-    - [漏桶](#漏桶)
-    - [区别](#区别)
-  - [限流力度](#限流力度)
-  - [限流范围](#限流范围)
-  - [RateLimiter限流实现](#ratelimiter限流实现)
-  - [防刷技术](#防刷技术)
-    - [传统防刷技术](#传统防刷技术)
-    - [黄牛为什么难防](#黄牛为什么难防)
-    - [防黄牛方案](#防黄牛方案)
-  - [小结](#小结-4)
+* [交易优化之缓存库存](#交易优化之缓存库存)
+  * [交易接口瓶颈](#交易接口瓶颈)
+  * [交易验证优化](#交易验证优化)
+    * [用户校验缓存优化](#用户校验缓存优化)
+    * [活动校验缓存优化](#活动校验缓存优化)
+    * [缓存优化后的效果](#缓存优化后的效果)
+  * [库存扣减优化](#库存扣减优化)
+    * [索引优化](#索引优化)
+    * [库存扣减缓存优化](#库存扣减缓存优化)
+      * [RocketMQ](#rocketmq)
+      * [同步数据库库存到缓存](#同步数据库库存到缓存)
+      * [同步缓存库存到数据库（异步扣减库存）](#同步缓存库存到数据库（异步扣减库存）)
+      * [异步扣减库存存在的问题](#异步扣减库存存在的问题)
+  * [小结](#小结)
+  * [接下来的优化方向](#接下来的优化方向)
+* [交易优化之事务型消息](#交易优化之事务型消息)
+  * [异步消息发送时机问题](#异步消息发送时机问题)
+    * [解决方法](#解决方法)
+  * [事务提交问题](#事务提交问题)
+    * [解决方法](#解决方法-1)
+  * [事务型消息](#事务型消息)
+    * [更新下单流程](#更新下单流程)
+  * [小结](#小结-1)
+  * [接下来的优化方向](#接下来的优化方向-1)
+* [库存流水](#库存流水)
+  * [下单操作的处理](#下单操作的处理)
+  * [UNKNOWN状态处理](#unknown状态处理)
+  * [库存售罄处理](#库存售罄处理)
+  * [小结](#小结-2)
+    * [可以改进的地方](#可以改进的地方)
+  * [接下来的优化方向](#接下来的优化方向-2)
+* [流量削峰](#流量削峰)
+  * [业务解耦—秒杀令牌](#业务解耦秒杀令牌)
+  * [限流—令牌大闸](#限流令牌大闸)
+    * [令牌大闸限流缺点](#令牌大闸限流缺点)
+  * [限流—队列泄洪](#限流队列泄洪)
+  * [小结](#小结-3)
+  * [接下来的优化方向](#接下来的优化方向-3)
+* [防刷限流](#防刷限流)
+  * [验证码技术](#验证码技术)
+  * [限流方案—限并发](#限流方案限并发)
+  * [限流方案—令牌桶/漏桶](#限流方案令牌桶漏桶)
+    * [令牌桶](#令牌桶)
+    * [漏桶](#漏桶)
+    * [区别](#区别)
+  * [限流力度](#限流力度)
+  * [限流范围](#限流范围)
+  * [RateLimiter限流实现](#ratelimiter限流实现)
+  * [防刷技术](#防刷技术)
+    * [传统防刷技术](#传统防刷技术)
+    * [黄牛为什么难防](#黄牛为什么难防)
+    * [防黄牛方案](#防黄牛方案)
+  * [小结](#小结-4)
 ------
+
+
 ## 开发工具 
 IntelliJ IDEA 2019.3.3 x64
 
@@ -186,25 +188,25 @@ IntelliJ IDEA 2019.3.3 x64
 - [高性能高并发商品秒杀系统设计与优化](https://github.com/Grootzz/seckill)
 ------
 
-# 进阶项目核心知识点
+## 进阶项目核心知识点
 
 ![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/points.png)
 
 ------
 
-# 基础项目回顾
+## 基础项目回顾
 
-## 项目结构—数据模型
+### 项目结构—数据模型
 
 ![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/models.png)
 
 ![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/datamodels.png)
 
-## 项目结构—DAO/Service/Controller结构
+### 项目结构—DAO/Service/Controller结构
 
 ![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/classmodels.png)
 
-## 全局异常处理类
+### 全局异常处理类
 
 在之前的基础项目中，抛出的`BizException`会被`BaseController`拦截到，并进行相应处理。但是如果前端发送到后端的URL找不到，即**404/405错误**，此时根本进入不了后端的`Controller`，需要处理。
 
@@ -250,13 +252,13 @@ spring.resources.add-mappings=false
 
 ------
 
-# 项目云端部署
+## 项目云端部署
 
-## 数据库部署
+### 数据库部署
 
 使用`mysqldump -uroot -ppassword --databases dbName`指令，即可将开发环境的数据库dump成SQL语句。在云端服务器，直接用MySQL运行dump出来的SQL语句即可。
 
-## 项目打包
+### 项目打包
 
 本项目打成`jar`包，在服务器直接用`java -jar`运行。`maven`打`jar`包首先需要添加以下属性，以便在打包的时候知道JDK的位置，不然报错。
 
@@ -294,7 +296,7 @@ spring.resources.add-mappings=false
 
 最后在开发目录执行`mvn clean package`即会清空`target`并打成`jar`包。
 
-## deploy启动脚本
+### deploy启动脚本
 
 有的时候，线上环境需要**更改一些配置**，比如在`9090`端口部署等等。Spring Boot支持在线上环境中使用`spring.config.additional-location`指定线上环境的配置文件，而不是打到`jar`包里的配置文件。
 
@@ -308,19 +310,19 @@ nohup java -Xms400m -Xmx400m -XX:NewSize=200m -XX:MaxNewSize=200m -jar miaosha.j
 
 ------
 
-# jmeter性能压测
+## jmeter性能压测
 
 本项目使用`jmeter`来进行并发压测。使用方法简单来说就是新建一个线程组，添加需要压测的接口地址，查看结果树和聚合报告。
 
 ------
 
-# 单机服务器并发容量问题和优化
+## 单机服务器并发容量问题和优化
 
-## 项目架构
+### 项目架构
 
 ![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/frame1.png)
 
-## 发现并发容量问题
+### 发现并发容量问题
 
 使用`pstree -p pid | wc -l`命令可以查看Java进程一共维护了多少个线程，在没有压测的时候，Tomcat维护了31个线程（不同机器该值不一定）。而进行压测的时候，Tomcat维护的线程数量猛增至200多个。
 
@@ -328,7 +330,7 @@ nohup java -Xms400m -Xmx400m -XX:NewSize=200m -XX:MaxNewSize=200m -jar miaosha.j
 
 在**当前线程数量**的情况下，发送100个线程，CPU的压力**不算太大**，所有请求都得到了处理；而发送**5000**个线程，大量请求报错，默认的线程数量不够用了，可见可以提高Tomcat维护的线程数。
 
-## Spring Boot内嵌Tomcat线程优化
+### Spring Boot内嵌Tomcat线程优化
 
 高并发条件下，就是要榨干服务器的性能，而Spring Boot内嵌Tomcat默认的线程设置比较“温柔”——默认**最大等待队列**为100，默认**最大可连接**数为10000，默认**最大工作线程**数为200，默认**最小工作线程**数为10。当请求超过200+100后，会拒绝处理；当连接超过10000后，会拒绝连接。对于最大连接数，一般默认的10000就行了，而其它三个配置，则需要根据需求进行优化。
 
@@ -352,7 +354,7 @@ nohup java -Xms400m -Xmx400m -XX:NewSize=200m -XX:MaxNewSize=200m -jar miaosha.j
 
 这样，当正常运行时，Tomcat维护了大概100个线程左右，而当压测时，线程数量猛增到800多个。
 
-## Spring Boot内嵌Tomcat网络连接优化
+### Spring Boot内嵌Tomcat网络连接优化
 
 当然Spring Boot并没有把内嵌Tomcat的所有配置都导出。一些配置需要通过` WebServerFactoryCustomizer<ConfigurableWebServerFactory>`接口来实现自定义。
 
@@ -378,30 +380,30 @@ public class WebServerConfiguration implements WebServerFactoryCustomizer<Config
 }
 ```
 
-## 小结
+### 小结
 
 这一节我们通过`pstree -p pid | wc -l`和`top -H`指令，配合`jmeter`压测工具：
 
 1. 发现了Spring Boot内嵌Tomcat的**线程容量问题**。通过在Spring Boot配置文件中添加配置项，提高了Tomcat的等待队列长度、最大工作线程、最小工作线程，榨干服务器性能。
 2. Spring Boot内嵌Tomcat默认使用`HTTP 1.0`的**短连接**，由于Spring Boot并没有把所有Tomcat配置都暴露出来，所以需要编写一个配置类使用`HTTP 1.1`的**长连接**。
 
-## 优化后的效果
+### 优化后的效果
 
 未调整线程数之前（2核CPU），200*50个请求，TPS在**150**左右，平均响应**1000毫秒**。调整之后，TPS在**250**左右，平均响应**400**毫秒。
 
-## 接下来的优化方向
+### 接下来的优化方向
 
 一是对服务器进行**分布式扩展**，二是**优化SQL查询**，比如添加索引。
 
 ------
 
-# 分布式扩展优化
+## 分布式扩展优化
 
-## 项目架构
+### 项目架构
 
 ![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/frame2.png)
 
-## Nginx部署前端静态资源
+### Nginx部署前端静态资源
 
 用户通过`nginx/html/resources`访问前端静态页面。而Ajax请求则会通过Nginx反向代理到两台不同的应用服务器。
 
@@ -420,7 +422,7 @@ location /resources/ {
 
 这样，用户就能通过```http://miaoshaserver/resources/```访问到静态页面。
 
-## Nginx反向代理处理Ajax请求
+### Nginx反向代理处理Ajax请求
 
 Ajax请求通过Nginx反向代理到两台应用服务器，实现负载分担。在`nginx.conf`里面添加以下字段：
 
@@ -442,7 +444,7 @@ server{
 
 这样，用`http://miaoshaserver`访问Nginx服务器，请求会被均衡地代理到下面的两个backend服务器上。
 
-## 开启Tomcat Access Log验证
+### 开启Tomcat Access Log验证
 
 开启这个功能可以查看是哪个IP发过来的请求，在`application.properties`里面添加，非必须。
 
@@ -452,7 +454,7 @@ server{
 
 `server.tomcat.accesslog.pattern=%h %l %u %t "%r" %s %b %D`
 
-## Nginx反向代理长连接优化
+### Nginx反向代理长连接优化
 
 Nginx服务器与**前端**的连接是**长连接**，但是与后端的**代理服务器**，默认是**短连接**，所以需要新添配置项。
 
@@ -476,7 +478,7 @@ server{
 }
 ```
 
-## 分布式扩展后的效果
+### 分布式扩展后的效果
 
 - **单机环境**下，发送1000*30个请求，TPS在**1400**左右，平均响应时间**460**毫秒。CPU的`us`高达8.0，`loadaverage`三个指标加起来接近于2了（CPU核数）。
 - **分布式**扩展后，TPS在**1700**左右，平均响应时间**440**毫秒。但是CPU的`us`只有2.5左右，`loadaverage`1分钟在0.5左右，服务器的压力小了很多，有更多的并发提升空间。
@@ -484,7 +486,7 @@ server{
 
 通过`netstat -an | grep miaoshaApp1_ip`可以查看Nginx服务器与后端服务器的连接情况，没开启长连接时，每次连接端口都在变，开启后，端口维持不变。
 
-## Nginx高性能原因—epoll多路复用
+### Nginx高性能原因—epoll多路复用
 
 在了解**epoll多路复用**之前，先看看**Java BIO**模型，也就是Blocking IO，阻塞模型。当客户端与服务器建立连接之后，通过`Socket.write()`向服务器发送数据，只有当数据写完之后，才会发送。如果当Socket缓冲区满了，那就不得不阻塞等待。
 
@@ -492,17 +494,17 @@ server{
 
 而**epoll模型**，在**Linux Select**模型之上，新增了**回调函数**，一旦某个连接发生变化，直接执行回调函数，不用遍历，效率更高。
 
-## Nginx高性能原因—master-worker进程模型
+### Nginx高性能原因—master-worker进程模型
 
 通过`ps -ef|grep nginx`命令可以看到有两个Nginx进程，一个标注为`master`，一个标注为`worker`，而且`worker`进程是`master`进程的子进程。这种父子关系的好处就是，`master`进程可以管理`worker`进程。
 
 ![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/ngxin2.jpg)
 
-### Ngxin进程结构
+#### Ngxin进程结构
 
 ![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/nginx.png)
 
-### Master-worker高效原理
+#### Master-worker高效原理
 
 客户端的请求，并不会被`master`进程处理，而是交给下面的`worker`进程来处理，多个`worker`进程通过“**抢占**”的方式，取得处理权。如果某个`worker`挂了，`master`会立刻感知到，用一个新的`worker`代替。这就是Nginx高效率的原因之一，也是可以平滑重启的原理。
 
@@ -510,11 +512,11 @@ server{
 
 综上，**epoll机制**+**master-worker机制**使得`worker`进程可以高效率地执行单线程I/O操作。
 
-## Nginx高性能原因—协程机制
+### Nginx高性能原因—协程机制
 
 Nginx引入了一种比线程更小的概念，那就是“**协程**”。协程依附于内存模型，切换开销更小；遇到阻塞，Nginx会立刻剥夺执行权；由于在同一个线程内，也不需要加锁。
 
-## 小结
+### 小结
 
 这一节对单机系统进行了分布式扩展，使得吞吐量和响应时间都有了一定提升。虽然提升不大，但是单个服务器的压力明显降低。
 
@@ -523,15 +525,15 @@ Nginx引入了一种比线程更小的概念，那就是“**协程**”。协�
 3. 接着优化了Nginx与后端服务器的连接。
 4. 最后分析了Nginx高效的原因，包括epoll多路复用、master-worker机制、协程机制。
 
-## 接下来的优化方向
+### 接下来的优化方向
 
 之前的用户登录凭证，是放在`HttpSession`里面的，而`HttpSession`又存放在Tomcat服务器。一旦实现了分布式扩展，多台服务器无法共享同一个Session，所以就需要进入**分布式会话**。
 
 ------
 
-# 分布式会话
+## 分布式会话
 
-## 基于Cookie传输SessionId
+### 基于Cookie传输SessionId
 
 就是把Tomcat生成的`SessionId`转存到Redis服务器上，从而实现分布式会话。
 
@@ -557,7 +559,7 @@ this.httpServletRequest.getSession().setAttribute("IS_LOGIN",true);
 this.httpServletRequest.getSession().setAttribute("LOGIN_USER",userModel);
 ```
 
-## 基于Token传输类似SessionId
+### 基于Token传输类似SessionId
 
 Spring Boot在Redis存入的`SessionId`有多项，不够简洁。一般常用UUID生成类似`SessionId`的唯一登录凭证`token`，然后将生成的`token`作为KEY，`UserModel`作为VALUE存入到Redis服务器。
 
@@ -625,28 +627,28 @@ if(userModel==null){
 }
 ```
 
-## 小结
+### 小结
 
 本节引入了分布式会话，有两种常见的实现方式：
 
 1. 第一种是通过Spring提供的API，将Tomcat的`SessionId`和`UserModel`存到Redis服务器上。
 2. 第二种是通过UUID生成登录`token`，将`token`和`UserModel`存到Redis服务器上。
 
-## 接下来的优化方向
+### 接下来的优化方向
 
 目前服务器的性能瓶颈在于数据库的大量读取操作，接下来会引入**缓存**，优化查询。
 
 ------
 
-# 查询优化之多级缓存
+## 查询优化之多级缓存
 
 多级缓存有两层含义，一个是**缓存**，一个是**多级**。我们知道，内存的速度是磁盘的成百上千倍，高并发下，从磁盘I/O十分影响性能。所谓缓存，就是将磁盘中的热点数据，暂时存到内存里面，以后查询直接从内存中读取，减少磁盘I/O，提高速度。所谓多级，就是在多个层次设置缓存，一个层次没有就去另一个层次查询。
 
-## 项目架构
+### 项目架构
 
 ![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/frame4.png)
 
-## 优化商品查询接口—单机版Redis缓存
+### 优化商品查询接口—单机版Redis缓存
 
 之前的`ItemController.getItem`接口，来一个`Id`，就调用`ItemService`去数据库查询一次。`ItemService`会查三张表，分别是商品信息表`item`表、商品库存`stock`表和活动信息表`promo`，十分影响性能。
 
@@ -670,7 +672,7 @@ public CommonReturnType getItem(@RequestParam(name = "id")Integer id){
 }
 ```
 
-### 序列化格式问题
+#### 序列化格式问题
 
 采用上述方式，存到Redis里面的VALUE是类似`/x05/x32`的二进制格式，我们需要自定义`RedisTemplate`的序列化格式。
 
@@ -696,7 +698,7 @@ public RedisTemplate redisTemplate(RedisConnectionFactory redisConnectionFactory
 
 这样，`ItemModel`的内容就会以JSON的格式存储和显示。
 
-### 时间序列化格式问题
+#### 时间序列化格式问题
 
 但是这样对于日期而言，序列化后是一个很长的毫秒数。我们希望是`yyyy-MM-dd HH:mm:ss`的格式，还需要进一步处理。新建`serializer`包，里面新建两个类。
 
@@ -740,7 +742,7 @@ public RedisTemplate redisTemplate(RedisConnectionFactory redisConnectionFactory
 
 这样就规范了时间类型的序列化格式。
 
-## 优化商品查询接口—本地热点缓存
+### 优化商品查询接口—本地热点缓存
 
 Redis缓存虽好，但是有网络I/O，没有本地缓存快。我们可以在Redis的前面再添加一层“**本地热点**”缓存。所谓**本地**，就是利用**本地JVM的内存**。所谓**热点**，由于JVM内存有限，仅存放**多次查询**的数据。
 
@@ -804,14 +806,14 @@ public CommonReturnType getItem(@RequestParam(name = "id")Integer id){
 }
 ```
 
-### 本地缓存缺点
+#### 本地缓存缺点
 
 本地缓存虽快，但是也有缺点：
 
 1. 更新麻烦，容易产生脏缓存。
 2. 受到JVM容量的限制。
 
-## 缓存优化后的效果
+### 缓存优化后的效果
 
 - 之前进行分布式扩展后，发送1000*20个请求，TPS在**1700**左右，平均响应时间**350**毫秒左右。
 - 引入Redis缓存后，TPS峰值达到了**2100**左右，平均响应时间**250**毫秒左右，Redis服务器压力不大，还可以继续加并发量。
@@ -819,7 +821,7 @@ public CommonReturnType getItem(@RequestParam(name = "id")Integer id){
 
 再次压测1000*40个请求，发现TPS峰值高达**4100**多，平均响应时间在**145**毫秒左右。Redis服务器压力更小了，因为都被本地缓存拦截了。
 
-## Nginx Proxy Cache缓存
+### Nginx Proxy Cache缓存
 
 通过Redis缓存，避免了MySQL大量的重复查询，提高了部分效率；通过本地缓存，减少了与Redis服务器的网络I/O，提高了大量效率。但实际上，前端（客户端）请求Nginx服务器，Nginx有分发过程，需要去请求后面的两台应用服务器，有一定网络I/O，能不能直接把**热点数据存放到Nginx服务器上**呢？答案是可以的。
 
@@ -849,7 +851,7 @@ server{
 
 这样，当多次访问后端商品详情接口时，在`nginx/tmp_cache/dir1/dir2`下生成了一个**文件**。`cat`这个文件，发现就是JSON格式的数据。
 
-### Nginx Proxy Cache缓存效果
+#### Nginx Proxy Cache缓存效果
 
 发现TPS峰值只有**2800**左右，平均响应时间**225**毫秒左右，**不升反降**，这是为什么呢？原因就是，虽然用户可以直接从Nginx服务器拿到缓存的数据，但是这些数据是基于**文件系统**的，是存放在**磁盘**上的，有**磁盘I/O**，虽然减少了一定的网络I/O，但是磁盘I/O并没有内存快，得不偿失，所以不建议使用。
 
@@ -865,7 +867,7 @@ lua也是基于协程机制的。
 
 lua脚本可以挂载在Nginx处理请求的起始、worker进程启动、内容输出等阶段。
 
-### lua脚本实战
+#### lua脚本实战
 
 在OpenResty下新建一个lua文件夹，专门用来存放lua脚本。新建一个`init.lua`。
 
@@ -894,7 +896,7 @@ location /staticitem/get{
 
 新建一个`helloworld.lua`，使用`ngx.exec("/item/get?id=1")`访问某个URL。同样在`nginx.conf`里面添加一个`helloworld`location。这样，当访问`/helloworld`的时候就会跳转到`item/get?id=1`这个URL上。
 
-## OpenResty—Shared dict
+### OpenResty—Shared dict
 
 OpenResty对Nginx进行了扩展，添加了很多功能，比如集成了lua开发环境、提供了对MySQL、Redis、Memcached的支持等。比原版Nginx使用起来更加方便。
 
@@ -956,7 +958,7 @@ location /luaitem/get{
 }
 ```
 
-### Shared dict缓存效果
+#### Shared dict缓存效果
 
 压测`/luaitem/get`，峰值TPS在**4000**左右，平均响应时间**150ms**左右，比`proxy cache`要高出不少，跟使用两层缓存效果差不多。
 
@@ -964,40 +966,40 @@ location /luaitem/get{
 
 最后，Shared dict依然受制于缓存容量和缓存更新问题。
 
-## 小结
+### 小结
 
 本节首先使用**Redis**对商品详情信息进行了缓存。然后使用本地缓存**guava**在Redis之前再做一层缓存。随后，本节尝试了将缓存提前，提到离客户端更近的Nginx服务器上，减少网络I/O，开启了Nginx的**proxy cache**，但是由于proxy cache是基于文件系统的，有磁盘I/O，效果得不偿失。最后，本节使用**OpenResty Shared Dict+Nginx+Lua**将Nginx的缓存从磁盘提到内存，提升了性能。
 
-## 接下来的优化方向
+### 接下来的优化方向
 
 现在的架构，**前端资源每次都要进行请求**，能不能像缓存数据库数据一样，对**前端资源进行缓存呢**？答案也是可以的，下一章将讲解静态资源CDN，将页面静态化。
 
 ------
 
-# 查询优化之页面静态化
+## 查询优化之页面静态化
 
-## 项目架构
+### 项目架构
 
 之前静态资源是直接从Nginx服务器上获取，而现在会先去CDN服务器上获取，如果没有则回源到Nginx服务器上获取。
 
 ![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/cdn.png)
 
-## CDN
+### CDN
 
 CDN是内容分发网络，一般用来存储（缓存）项目的静态资源。访问静态资源，会从离用户**最近**的CDN服务器上返回静态资源。如果该CDN服务器上没有静态资源，则会执行**回源**操作，从Nginx服务器上获取静态资源。
 
-### CDN使用
+#### CDN使用
 
 1. 购买一个CDN服务器，选择要加速的域名（比如`miaoshaserver.jiasu.com`），同时要填写**源站**IP，也就是Nginx服务器，便于回源操作。
 2. 接下来要配置`miaoshaserver.jiasu.com`的DNS解析规则。一般的解析规则是`A记录类型`，也就是把一个域名直接解析成**IP地址**。这里使用`CNAME`进行解析，将一个域名解析到另外一个域名。而这个”另一个域名“是云服务器厂商提供的，它会把请求解析到相应的CDN服务器上。
 3. 访问`miaoshaserver.jiasu.com/resources/getitem.html?id=1`即可以CDN的方式访问静态资源。
 
-### CDN优化效果
+#### CDN优化效果
 
 - 没有使用CDN优化：发送500*20个请求，TPS在**700**左右，平均响应时间**400ms**。
 - 使用了CDN优化：TPS在**1300**左右，平均响应时间**150ms**，可见优化效果还是很好的。
 
-### CDN深入—cache controll响应头
+#### CDN深入—cache controll响应头
 
 在响应里面有一个`cache controll`响应头，这个响应头表示**客户端是否可以缓存响应**。有以下几种缓存策略：
 
@@ -1009,53 +1011,53 @@ CDN是内容分发网络，一般用来存储（缓存）项目的静态资源�
 | no-cache    | 也会缓存，但是使用缓存之前会询问服务器，该缓存是否可用 |
 | no-store    | 不缓存任何响应内容                                     |
 
-#### 选择缓存策略
+##### 选择缓存策略
 
 如果不缓存，那就选择`no-store`。如果需要缓存，但是需要重新验证，则选择`no-cache`；如果不需要重新验证，则选择`private`或者`public`。然后设置`max-age`，最后添加`ETag Header`。
 
 <img src="https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/choosehead.png" width=60% />
 
-#### 有效性验证
+##### 有效性验证
 
 **ETag**：第一次请求资源的时候，服务器会根据**资源内容**生成一个**唯一标示ETag**，并返回给浏览器。浏览器下一次请求，会把**ETag**（If-None-Match）发送给服务器，与服务器的ETag进行对比。如果一致，就返回一个**304**响应，即**Not Modify**，**表示浏览器缓存的资源文件依然是可用的**，直接使用就行了，不用重新请求。
 
-#### 请求资源流程
+##### 请求资源流程
 
 <img src="https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/requestResrProcess.png" width=80% />
 
-### CDN深入—浏览器三种刷新方式
+#### CDN深入—浏览器三种刷新方式
 
-#### a标签/回车刷新
+##### a标签/回车刷新
 
 查看`max-age`是否有效，有效直接从缓存中获取，无效进入缓存协商逻辑。
 
-#### F5刷新
+##### F5刷新
 
 取消`max-age`或者将其设置为0，直接进入缓存协商逻辑。
 
-#### CTRL+F5强制刷新
+##### CTRL+F5强制刷新
 
 直接去掉`cache-control`和协商头，重新请求资源。
 
-### CDN深入—自定义缓存策略
+#### CDN深入—自定义缓存策略
 
 CDN服务器，既充当了浏览器的服务端，又充当了Nginx的客户端。所以它的缓存策略尤其重要。除了按照服务器的`max-age`，CDN服务器还可以自己设置过期时间。
 
 **总的规则就是**：源站没有配置，遵从CDN控制台的配置；CDN控制台没有配置，遵从服务器提供商的默认配置。源站有配置，CDN控制台有配置，遵从CDN控制台的配置；CDN控制台没有配置，遵从源站配置。
 
-### CDN深入—静态资源部署策略
+#### CDN深入—静态资源部署策略
 
-#### 部署窘境
+##### 部署窘境
 
 假如服务器端的静态资源更新了，但是由于客户端的`max-age`还未失效，用的还是老的资源，文件名又一样，用户不得不使用CTRL+F5强制刷新，才能请求更新的静态资源。
 
-#### 解决方法
+##### 解决方法
 
 1. **版本号**：在静态资源文件后面追加一个版本号，比如`a.js?v=1.0`。这种方法维护起来十分麻烦，比如只有一个`js`文件做了修改，那其它`html`、`css`文件要不要追加版本号呢？
 2. **摘要**：对静态资源的内容进行哈希操作，得到一个摘要，比如`a.js?v=45edw`，维护起来更加方法。但是会导致是先部署`js`还是先部署`html`的问题。比如先部署`js`，那么`html`页面引用的还是老的`js`，`js`直接失效；如果先部署`html`，那么引用的`js`又是老版本的`js`。
 3. **摘要作为文件名**：比如`45edw.js`，会同时存在新老两个版本，方便回滚。
 
-## 全页面静态化
+### 全页面静态化
 
 现在的架构是，用户通过CDN请求到了静态资源，然后静态页面会在加载的时候，发送一个Ajax请求到后端，接收到后端的响应后，再用**DOM渲染**。也就是每一个用户请求，都有一个**请求后端接口**并**渲染**的过程。那能不能取消这个过程，直接在服务器端把页面渲染好，返回一个纯`html`文件给客户端呢？
 
@@ -1074,7 +1076,7 @@ jQuery(document).ready(function(){
 })
 ```
 
-### phantomJS实现全页面静态化
+#### phantomJS实现全页面静态化
 
 phantomJS就像一个爬虫，会把页面中的JS执行完毕后，返回一个渲染完成的`html`文件。
 
@@ -1154,29 +1156,29 @@ page.open("http://miaoshaserver/resources/getitem.html?id=2",function(status){
 
 这样，当页面第一次加载时，`hasInit=0`，那么会发送Ajax请求并渲染页面，渲染完毕后，将`hasInit`置为1。当页面第二次加载时，由于`hasInit=1`，不会再次发送Ajax请求页面。
 
-## 小结
+### 小结
 
 这一章我们
 
 1. 首先使用**CDN技术**将静态资源部署到CDN服务器上，提高了静态资源的响应速度。
 2. 然后我们使用**全页面静态化技术**，使得用户在请求页面的时候，不会每次都去请求后端接口，然后进行页面渲染。而是直接得到一个已经渲染好的HTML页面，提高了响应速度。
 
-## 接下来的优化方向
+### 接下来的优化方向
 
 接下里我们会对**交易下单接口**进行性能优化，包括缓存库存、异步扣减库存等。
 
 ------
 
-# 优化效果总结
+## 查询优化效果总结
 
-## Tomcat优化
+### Tomcat优化
 
 | 优化线程数和连接（200*50） | TPS  | 平均响应时间/ms |
 | -------------------------- | ---- | --------------- |
 | 优化前                     | 150  | 1000            |
 | 优化后                     | 250  | 400             |
 
-## 分布式扩展优化
+### 分布式扩展优化
 
 | 分布式扩展（1000*30） | TPS  | 平均响应时间/ms | us   | load_average  |
 | --------------------- | ---- | --------------- | ---- | ------------- |
@@ -1184,7 +1186,7 @@ page.open("http://miaoshaserver/resources/getitem.html?id=2",function(status){
 | 分布式扩展            | 1700 | 440             | 2.5  | 1分钟0.5      |
 | 长连接优化            | 1700 | 350             | -    | -             |
 
-## 缓存优化
+### 缓存优化
 
 | 缓存优化（1000*20）       | TPS      | 平均响应时间/ms |
 | ------------------------- | -------- | --------------- |
@@ -1194,7 +1196,7 @@ page.open("http://miaoshaserver/resources/getitem.html?id=2",function(status){
 | 引入Nginx Proxy Cache     | 2800     | 225             |
 | 引入OpenResty Shared Dict | **4000** | 150             |
 
-## CDN优化
+### CDN优化
 
 | CDN优化（500*20） | TPS  | 平均响应时间/ms |
 | ----------------- | ---- | --------------- |
@@ -1215,9 +1217,9 @@ page.open("http://miaoshaserver/resources/getitem.html?id=2",function(status){
 
 ------
 
-# 交易优化之缓存库存
+## 交易优化之缓存库存
 
-## 交易接口瓶颈
+### 交易接口瓶颈
 
 发送20*200个请求压测`createOrder`接口，TPS只有**280**左右，平均响应时间**460**毫秒。应用服务器`us`占用高达**75%**，1分钟的`load average`高达**2.21**，可见压力很大。相反，数据库服务器的压力则要小很多。
 
@@ -1234,13 +1236,13 @@ UserModel userModel=userService.getUserById(userId);
 
 这还没完，最后还要对`stock`**库存表进行-1`update`操作**，对`order_info`**订单信息表进行添加`insert`操作**，对`item`**商品信息表进行销量+1`update`操作**。仅仅一个下单，就有**6次**数据库I/O操作，此外，减库存操作还存在**行锁阻塞**，所以下单接口并发性能很低。
 
-## 交易验证优化
+### 交易验证优化
 
 查询用户信息，是为了**用户风控策略**。判断用户信息是否存在是最基本的策略，在企业级中，还可以判断用户状态是否异常，是否异地登录等等。用户风控的信息，实际上可以缓存化，放到Redis里面。
 
 查询商品信息、活动信息，是为了**活动校验策略**。商品信息、活动信息，也可以存入缓存中。活动信息，由于具有**时效性**，需要具备紧急下线的能力，可以编写一个接口，清除活动信息的缓存。
 
-### 用户校验缓存优化
+#### 用户校验缓存优化
 
 思路很简单，就是先从Redis里面获取用户信息，没有再去数据库里查，并存到Redis里面。`UserService`新开一个`getUserByIdInCache`的方法。
 
@@ -1256,7 +1258,7 @@ public UserModel getUserByIdInCache(Integer id) {
 }
 ```
 
-### 活动校验缓存优化
+#### 活动校验缓存优化
 
 跟用户校验类似，`ItemService`新开一个`getItemByIdInCache`方法。
 
@@ -1272,23 +1274,23 @@ public ItemModel getItemByIdInCache(Integer id) {
 }
 ```
 
-### 缓存优化后的效果
+#### 缓存优化后的效果
 
 之前压测1000*20个请求，TPS在**450**左右，平均响应**1500毫秒**。
 
 优化之后，TPS在**1200**左右，平均响应**600毫秒**，可见效果十分好。
 
-## 库存扣减优化
+### 库存扣减优化
 
-### 索引优化
+#### 索引优化
 
 之前扣减库存的操作，会执行`update stock set stock = stock -#{amount} where item_id = #{itemId} and stock >= #{amount}`这条SQL语句。如果`where`条件的`item_id`字段没有**索引**，那么会**锁表**，性能很低。所以先查看`item_id`字段是否有索引，没有的话，使用`alter table stock add UNIQUE INDEX item_id_index(item_id)`，为`item_id`字段添加一个**唯一索引**，这样在修改的时候，只会**锁行**。
 
-### 库存扣减缓存优化
+#### 库存扣减缓存优化
 
 之前下单，是**直接操作数据库**，一旦秒杀活动开始，大量的流量涌入扣减库存接口，**数据库压力很大**。那么可不可以先在**缓存中**下单？答案是可以的。如果要在缓存中扣减库存，需要解决**两个**问题，第一个是活动开始前，将数据库的库存信息，同步到缓存中。第二个是下单之后，要将缓存中的库存信息同步到数据库中。这就需要用到**异步消息队列**——也就是**RocketMQ**。
 
-#### RocketMQ
+##### RocketMQ
 
 RocketMQ是阿里巴巴在RabbitMQ基础上改进的一个消息中间件，具体的就不赘述了。
 
@@ -1296,7 +1298,7 @@ RocketMQ是阿里巴巴在RabbitMQ基础上改进的一个消息中间件，具�
 
 此外，`mqnamesrv`甚至不能用`localhost`启动，必须是本机公网IP，否则报`RemotingTooMuchRequestException`。
 
-#### 同步数据库库存到缓存
+##### 同步数据库库存到缓存
 
 `PromoService`新建一个`publishPromo`的方法，把数据库的缓存存到Redis里面去。
 
@@ -1326,7 +1328,7 @@ public boolean decreaseStock(Integer itemId, Integer amount) {
 }
 ```
 
-#### 同步缓存库存到数据库（异步扣减库存）
+##### 同步缓存库存到数据库（异步扣减库存）
 
 引入RocketMQ相应`jar`包，在Spring Boot配置文件中添加MQ配置。
 
@@ -1443,7 +1445,7 @@ public boolean decreaseStock(Integer itemId, Integer amount) {
 }
 ```
 
-#### 异步扣减库存存在的问题
+##### 异步扣减库存存在的问题
 
 1. 如果发送消息失败，只能回滚Redis。
 2. 消费端从数据库扣减操作执行失败，如何处理（这里默认会成功）？
@@ -1451,24 +1453,24 @@ public boolean decreaseStock(Integer itemId, Integer amount) {
 
 所以需要引入**事务型消息**。
 
-## 小结
+### 小结
 
 这一章我们
 
 1. 首先对**交易验证**进行了优化，把对用户、商品、活动的查询从数据库转移到了缓存中，优化效果明显。
 2. 随后，我们优化了减库存的逻辑，一是添加了索引，从锁表变成了锁行；二是将减库存的操作也移到了缓存中，先从缓存中扣，再从数据库扣。这就涉及到了**异步减库存**，所以需要引入**消息中间件**。
 
-## 接下来的优化方向
+### 接下来的优化方向
 
 正如**异步扣减库存存在的问题**所述，这么处理还有许多漏洞，下一章将会详解。
 
-# 交易优化之事务型消息
+## 交易优化之事务型消息
 
-## 异步消息发送时机问题
+### 异步消息发送时机问题
 
 目前扣减库存的事务`ItemService.decreaseStock`是封装在`OrderService.createOrder`事务里面的。在扣减Redis库存、发送异步消息之后，还有订单入库、增加销量的操作。如果这些操作失败，那么`createOrder`**事务会回滚**，`decreaseStock`**事务也回滚**，但是Redis的**扣减操作却不能回滚**，会导致数据不一致。
 
-### 解决方法
+#### 解决方法
 
 解决的方法就是在订单入库、增加销量成功之后，再发送异步消息，`ItemService.decreaseStock`只**负责扣减Redis库存**，**不发送异步消息**。
 
@@ -1521,11 +1523,11 @@ boolean mqResult=itemService.asyncDecreaseStock(itemId,amount);
 
 这样，就算订单入库失败、销量增加失败、消息发送失败，都能保证缓存和数据库的一致性。
 
-## 事务提交问题
+### 事务提交问题
 
 但是这么做，依然有问题。Spring的`@Transactional`标签，会在**事务方法返回后才提交**，如果提交的过程中，发生了异常，则数据库回滚，但是Redis库存已扣，还是无法保证一致性。我们需要在**事务提交成功后**，**再发送异步消息**。
 
-### 解决方法
+#### 解决方法
 
 Spring给我们提供了`TransactionSynchronizationManager.registerSynchronization`方法，这个方法的传入一个`TransactionSynchronizationAdapter`的匿名类，通过`afterCommit`方法，在**事务提交成功后**，执行**发送消息操作**。
 
@@ -1541,7 +1543,7 @@ TransactionSynchronizationManager.registerSynchronization(new TransactionSynchro
 }
 ```
 
-## 事务型消息
+### 事务型消息
 
 上面的做法，依然不能保证万无一失。假设现在**事务提交成功了**，等着执行`afterCommit`方法，这个时候**突然宕机了**，那么**订单已然入库**，**销量已然增加**，但是**去数据库扣减库存的这条消息**却“**丢失**”了。这里就需要引入RocketMQ的事务型消息。
 
@@ -1604,13 +1606,13 @@ transactionMQProducer.setTransactionListener(new TransactionListener() {
 
 这样，在**事务型消息中去执行下单操作**，下单失败，则消息回滚，**不会去数据库扣减库存**。下单成功，则消息被消费，**扣减数据库库存**。
 
-### 更新下单流程
+#### 更新下单流程
 
 之前的下单流程是：在`OrderController`里面调用了`OrderService.createOrder`方法，然后在该方法最后发送了异步消息，会导致异步消息丢失的问题。所以我们引入了**事务型消息**。
 
 现在的下单流程是：在`OrderController`里面直接调用`MqProducer.transactionAsyncReduceStock`方法，发送一个事务型消息，然后在**事务型消息中调用`OrderService.createOrder`方法**，进行下单。
 
-## 小结
+### 小结
 
 这一章我们
 
@@ -1618,13 +1620,13 @@ transactionMQProducer.setTransactionListener(new TransactionListener() {
 2. 其次，由于Spring的`@Transactional`标签是在方法返回后，才提交事务，如果返回阶段出了问题，那么数据库回滚了，但是缓存的库存却扣了。所以，我们使用了`afterCommit`方法。
 3. 最后，如果在执行`afterCommit`的时候，发生了异常，那么消息就发不出去，又会导致数据一致性问题。所以我们通过使用**事务型消息**，把**下单操作包装在异步扣减消息里面**，让下单操作跟扣减消息**同生共死**。
 
-## 接下来的优化方向
+### 接下来的优化方向
 
 不要以为这样就万事大吉了，上述流程还有一个漏洞，就是当执行`orderService.createOrder`后，突然**又宕机了**，根本没有返回，这个时候事务型消息就会进入`UNKNOWN`状态，我们需要处理这个状态。
 
 在匿名类`TransactionListener`里面，还需要覆写`checkLocalTransaction`方法，这个方法就是用来处理`UNKNOWN`状态的。应该怎么处理？这就需要引入**库存流水**。
 
-# 库存流水
+## 库存流水
 
 数据库新建一张`stock_log`的表，用来记录库存流水，添加一个`ItemService.initStockLog`方法。
 
@@ -1680,7 +1682,7 @@ stockLogDO.setStatus(2);
 stockLogDOMapper.updateByPrimaryKeySelective(stockLogDO);
 ```
 
-## 下单操作的处理
+### 下单操作的处理
 
 异步更新数据库，需要事务型消息从`prepare`状态变成`commit`状态。假如此时`orderService.createOrder`**本身发生了异常**，那么就回滚事务型消息，并且返回`LocalTransactionState.ROLLBACK_MESSAGE`，这个下单操作就会被取消。
 
@@ -1702,7 +1704,7 @@ try {
 return LocalTransactionState.COMMIT_MESSAGE;
 ```
 
-## UNKNOWN状态处理
+### UNKNOWN状态处理
 
 如上节结尾所述，如果在执行`createOrder`的时候，突然宕机了，此时事务型消息的状态是`UNKNOWN`，需要在`TransactionListener.checkLocalTransaction`方法中进行处理。
 
@@ -1727,7 +1729,7 @@ public LocalTransactionState checkLocalTransaction(MessageExt message) {
 }
 ```
 
-## 库存售罄处理
+### 库存售罄处理
 
 现在是用户请求一次`OrderController.createOrder`就初始化一次流水，但是如果10000个用户抢10个商品，就会初始化10000次库存流水，这显然是不行的。
 
@@ -1759,7 +1761,7 @@ if (redisTemplate.hasKey("promo_item_stock_invalid_"+itemId))
 String stockLogId = itemService.initStockLog(itemId, amount);
 ```
 
-## 小结
+### 小结
 
 这一节通过引入库存流水，来记录库存的状态，以便在**事务型消息处于不同状态时进行处理**。
 
@@ -1770,19 +1772,19 @@ String stockLogId = itemService.initStockLog(itemId, amount);
 1. `createOrder`执行完**没有宕机**，要么**执行成功**，要么**抛出异常**。**执行成功**，那么就说明下单成功了，订单入库了，Redis里的库存扣了，销量增加了，**等待着异步扣减库存**，所以将事务型消息的状态，从`UNKNOWN`变为`COMMIT`，这样消费端就会消费这条消息，异步扣减库存。抛出异常，那么订单入库、Redis库存、销量增加，就会被数据库回滚，此时去异步扣减的消息，就应该“丢弃”，所以发回`ROLLBACK`，进行回滚。
 2. `createOrder`执行完**宕机**了，那么这条消息会是`UNKNOWN`状态，这个时候就需要在`checkLocalTransaction`进行处理。如果`createOrder`执行完毕，此时`stockLog.status==2`，就说明下单成功，需要去异步扣减库存，所以返回`COMMIT`。如果`status==1`，说明下单还未完成，还需要继续执行下单操作，所以返回`UNKNOWN`。如果`status==3`，说明下单失败，需要回滚，不需要异步扣减库存，所以返回`ROLLBACK`。
 
-### 可以改进的地方
+#### 可以改进的地方
 
 目前只是扣减库存异步化，实际上销量逻辑和交易逻辑都可以异步化，这里就不赘述了。
 
-## 接下来的优化方向
+### 接下来的优化方向
 
 目前下单接口会被脚本不停地刷，影响正常用户的体验。此外，验证逻辑和下单逻辑强关联，耦合度比较高。最后，验证逻辑也比较复杂。接下来会引入流量削峰技术。
 
-# 流量削峰
+## 流量削峰
 
 秒杀秒杀，就是在活动开始的一瞬间，有大量流量涌入，优化不当，会导致服务器停滞，甚至宕机。所以引入流量削峰技术十分有必要。
 
-## 业务解耦—秒杀令牌
+### 业务解耦—秒杀令牌
 
 之前的**验证逻辑**和**下单逻辑**都耦合在`OrderService.createOrder`里面，现在利用秒杀令牌，使校验逻辑和下单逻辑分离。
 
@@ -1859,7 +1861,7 @@ public CommonReturnType createOrder(··· @RequestParam(name = "promoToken", re
 
 这样就彻底完成了校验逻辑和下单逻辑的分离。现在的问题是，假设有1E个用户请求下单，那么就会生成1E的令牌，这是十分消耗性能的，所以接下来会引入**秒杀大闸进行限流**。
 
-## 限流—令牌大闸
+### 限流—令牌大闸
 
 大闸的意思就是**令牌的数量是有限的**，当令牌用完时，就不再发放令牌了，那么下单将无法进行。之前我们通过`PromoService.publishPromo`将库存发布到了Redis上，现在我们将令牌总量也发布到Redis上，这里我们设定令牌总量是库存的5倍。
 
@@ -1888,11 +1890,11 @@ if (result < 0)
 
 这样，当令牌总量为0时，就不再发放令牌，也就无法下单了。
 
-### 令牌大闸限流缺点
+#### 令牌大闸限流缺点
 
 当商品种类少、库存少的时候，令牌大闸效果还不错。但是一旦参与活动的商品库存太大，比如10000个，那么一秒钟也有上十万的流量涌入，限制能力是很弱的。所以需要**队列泄洪**。
 
-## 限流—队列泄洪
+### 限流—队列泄洪
 
 队列泄洪，就是让多余的请求**排队等待**。**排队**有时候比**多线程**并发效率更高，多线程毕竟有锁的竞争、上下文的切换，很消耗性能。而排队是无锁的，单线程的，某些情况下效率更高。
 
@@ -1938,7 +1940,7 @@ future.get();
 
 这样，就算瞬间涌入再多流量，得到处理的也就20个，其它全部等待。
 
-## 小结
+### 小结
 
 这一章我们
 
@@ -1946,13 +1948,13 @@ future.get();
 2. 使用秒杀大闸，实现了限流的第一步，限制了流量的总量。
 3. 使用队列泄洪，实现了限流的第二步，同一时间只有部分请求得到处理。
 
-## 接下来的优化方向
+### 接下来的优化方向
 
 接下来将会引入防刷限流技术，比如验证码技术等。
 
-# 防刷限流
+## 防刷限流
 
-## 验证码技术
+### 验证码技术
 
 之前的流程是，用户点击下单后，会直接拿到令牌然后执行下单流程。现在，用户点击下单后，前端会弹出一个“验证码”，用户输入之后，才能请求下单接口。
 
@@ -1994,39 +1996,39 @@ public CommonReturnType generateToken(··· @RequestParam(name = "verifyCode") 
 
 这样，就实现了在下单之前，添加一个验证码，限制部分流量的功能。
 
-## 限流方案—限并发
+### 限流方案—限并发
 
 限制并发量意思就是同一时间**只有一定数量的线程去处理请求**，实现也比较简单，维护一个**全局计数器**，当请求进入接口时，计数器-1，并且判断计数器是否>0，大于0则处理请求，小于0则拒绝等待。
 
 但是一般衡量并发性，是用TPS或者QPS，而该方案由于限制了线程数，自然不能用TPS或者QPS衡量。
 
-## 限流方案—令牌桶/漏桶
+### 限流方案—令牌桶/漏桶
 
-### 令牌桶
+#### 令牌桶
 
 客户端请求接口，必须先从令牌桶中获取令牌，令牌是由一个“定时器”定期填充的。在一个时间内，令牌的数量是有限的。令牌桶的大小为100，那么TPS就为100。
 
 ![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/tokenBucket.png)
 
-### 漏桶
+#### 漏桶
 
 客户端请求接口，会向漏桶里面“加水”。漏桶每秒漏出一定数量的“水”，也就是处理请求。只有当漏洞不满时，才能请求。
 
 ![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/leekBucket.png)
 
-### 区别
+#### 区别
 
 漏桶无法应对**突发流量**，比如突然来10个请求，只能处理一个。但是令牌桶，可以一次性处理10个。所以，令牌桶用得比较多。
 
-## 限流力度
+### 限流力度
 
 分为**接口维**度和**总维度**，很好理解。接口维度就是限制某个接口的流量，而总维度是限制所有接口的流量。
 
-## 限流范围
+### 限流范围
 
 分为**集群限流**和**单机限流**，集群限流顾名思义就是限制整个集群的流量，需要用Redis或者其它中间件技术来做统一计数器，往往会产生性能瓶颈。单机限流在负载均衡的前提下效果更好。
 
-## RateLimiter限流实现
+### RateLimiter限流实现
 
 `google.guava.RateLimiter`就是令牌桶算法的一个实现类，`OrderController`引入这个类，在`init`方法里面，初始令牌数量为200。
 
@@ -2049,27 +2051,27 @@ if (!orderCreateRateLimiter.tryAcquire())
 
 ```
 
-## 防刷技术
+### 防刷技术
 
 排队、限流、令牌只能控制总流量，无法控制黄牛流量。
 
-### 传统防刷技术
+#### 传统防刷技术
 
 1. 限制一个会话（Session、Token）一定时间内请求接口的次数。多会话接入绕开无效，比如黄牛可以开启多个会话。
 2. 限制一个IP一定时间内请求接口的次数。容易误伤，某个局域网的正常用户共享一个IP进行访问。而且IP可以被伪造。
 
-### 黄牛为什么难防
+#### 黄牛为什么难防
 
 1. 模拟硬件设备，比如手机。一个看似正常的用户，可能是用模拟器模拟出来的。
 2. 设备牧场，一屋子手机刷接口。
 3. 人工作弊，这个最难防，请真人刷接口。
 
-### 防黄牛方案
+#### 防黄牛方案
 
 1. **设备指纹方式**：采集终端设备各项数据，启动应用时生成一个唯一设备指纹。根据对应设备的指纹参数，估计是可疑设备的概率。
 2. **凭证系统**：根据设备指纹下发凭证，在关键业务链路上带上凭证并由凭证服务器验证。凭证服务器根据设备指纹参数和风控系统判定凭证的可疑程度。若凭证分数低于设定值，则开启验证。
 
-## 小结
+### 小结
 
 这一节我们
 
@@ -2079,9 +2081,9 @@ if (!orderCreateRateLimiter.tryAcquire())
 
 ------
 
-# 优化效果总结
+## 交易优化效果总结
 
-## 交易验证优化
+### 交易验证优化
 
 | 交易验证优化（1000*20） | TPS      | 平均响应时间/ms | us   | load average |
 | ----------------------- | -------- | --------------- | ---- | ------------ |
