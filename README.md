@@ -166,8 +166,9 @@ IntelliJ IDEA 2019.3.3 x64
 
 ### 需要解决的问题：
 
-- 云端部署，性能压测，Tomcat优化
-- 分布式扩展：Nginx反向代理，分布式会话
+- 云端部署，性能压测
+- 单机服务器优化：Tomcat并发容量
+- 分布式扩展：Nginx反向代理，负载均衡，分布式会话
 - 查询性能优化：商品页面缓存、数据热点缓存（多级缓存：redis/guava/nginx lua）
 - 查询性能优化：页面静态化(CDN)，前后端分离
 - 交易性能优化：库存缓存、异步处理（RocketMQ）、缓存一致性
@@ -246,12 +247,16 @@ spring.resources.add-mappings=false
 ------
 
 ## 项目云端部署
+
 **阿里云ECS服务器**
 - 1台用于mysql/redis/RocketMQ服务器（2核4G）
 - 1台用于Nginx反向代理服务器（2核4G）
 - 3台用于秒杀后端服务器（2核4G）
 
 **阿里云CDN服务器**：页面静态化
+
+参考[文件配置](https://github.com/PJB0911/SecKill-ii/tree/master/%E5%8F%82%E8%80%83%E6%96%87%E4%BB%B6)
+
 ### 数据库部署
 
 使用`mysqldump -uroot -ppassword --databases dbName`指令，即可将开发环境的数据库dump成SQL语句。在云端服务器，直接用MySQL运行dump出来的SQL语句即可。
@@ -293,11 +298,11 @@ spring.resources.add-mappings=false
 </plugins>
 ```
 
-最后在开发目录执行`mvn clean package`即会清空`target`并打成`jar`包。
+3. 在开发目录执行`mvn clean package`即会清空`target`并打成`jar`包。
 
 ### deploy启动脚本
 
-有的时候，线上环境需要**更改一些配置**，比如在`9090`端口部署等等。Spring Boot支持在线上环境中使用`spring.config.additional-location`指定线上环境的配置文件，而不是打到`jar`包里的配置文件。
+线上环境需要**更改一些配置**，比如在`9090`端口部署等等。Spring Boot支持在线上环境中使用`spring.config.additional-location`指定线上环境的配置文件，而不是打到`jar`包里的配置文件`application.properties`。
 
 新建一个`sh`文件：
 
@@ -307,11 +312,11 @@ nohup java -Xms400m -Xmx400m -XX:NewSize=200m -XX:MaxNewSize=200m -jar miaosha.j
 
 使用`./deploy.sh &`即可在后台启动，使用`tail -f nohup.out`即可查看项目启动、运行的信息。
 
-------
 
 ### jmeter性能压测
 
-本项目使用`jmeter`来进行并发压测。使用方法简单来说就是新建一个线程组，添加需要压测的接口地址，查看结果树和聚合报告。
+本项目使用`jmeter`来进行并发压测。使用方法新建一个线程组，添加需要压测的接口地址，查看结果树和聚合报告。
+![](https://github.com/PJB0911/SecKill-ii/blob/master/images/Jmeter.png)
 
 ------
 
