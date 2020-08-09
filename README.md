@@ -15,7 +15,7 @@
   * [数据库部署](#数据库部署)
   * [项目打包](#项目打包)
   * [deploy启动脚本](#deploy启动脚本)
-* [jmeter性能压测](#jmeter性能压测)
+  * [jmeter性能压测](#jmeter性能压测)
 * [单机服务器并发容量问题和优化](#单机服务器并发容量问题和优化)
   * [项目架构](#项目架构)
   * [发现并发容量问题](#发现并发容量问题)
@@ -90,8 +90,8 @@
       * [同步数据库库存到缓存](#同步数据库库存到缓存)
       * [同步缓存库存到数据库（异步扣减库存）](#同步缓存库存到数据库（异步扣减库存）)
       * [异步扣减库存存在的问题](#异步扣减库存存在的问题)
-  * [小结](#小结)
-  * [接下来的优化方向](#接下来的优化方向)
+  * [小结](#小结-5)
+  * [接下来的优化方向](#接下来的优化方向-5)
 * [交易优化之事务型消息](#交易优化之事务型消息)
   * [异步消息发送时机问题](#异步消息发送时机问题)
     * [解决方法](#解决方法)
@@ -99,22 +99,22 @@
     * [解决方法](#解决方法-1)
   * [事务型消息](#事务型消息)
     * [更新下单流程](#更新下单流程)
-  * [小结](#小结-5)
-  * [接下来的优化方向](#接下来的优化方向-5)
+  * [小结](#小结-6)
+  * [接下来的优化方向](#接下来的优化方向-6)
 * [库存流水](#库存流水)
   * [下单操作的处理](#下单操作的处理)
   * [UNKNOWN状态处理](#unknown状态处理)
   * [库存售罄处理](#库存售罄处理)
-  * [小结](#小结-6)
+  * [小结](#小结-7)
     * [可以改进的地方](#可以改进的地方)
-  * [接下来的优化方向](#接下来的优化方向-6)
+  * [接下来的优化方向](#接下来的优化方向-7)
 * [流量削峰](#流量削峰)
   * [业务解耦—秒杀令牌](#业务解耦秒杀令牌)
   * [限流—令牌大闸](#限流令牌大闸)
     * [令牌大闸限流缺点](#令牌大闸限流缺点)
   * [限流—队列泄洪](#限流队列泄洪)
-  * [小结](#小结-7)
-  * [接下来的优化方向](#接下来的优化方向-7)
+  * [小结](#小结-8)
+  * [接下来的优化方向](#接下来的优化方向-8)
 * [防刷限流](#防刷限流)
   * [验证码技术](#验证码技术)
   * [限流方案—限并发](#限流方案限并发)
@@ -129,7 +129,7 @@
     * [传统防刷技术](#传统防刷技术)
     * [黄牛为什么难防](#黄牛为什么难防)
     * [防黄牛方案](#防黄牛方案)
-  * [小结](#小结-8)
+  * [小结](#小结-9)
 ------
 
 
@@ -175,7 +175,7 @@ IntelliJ IDEA 2019.3.3 x64
 - 接口安全：隐藏秒杀地址（即秒杀令牌）、防刷限流
 
 
-参考：
+### 参考：
 - [敖丙带你设计秒杀系统](https://mp.weixin.qq.com/s/KWb3POodisbOEsQVblsoGw)
 - [全栈秒杀系统设计](https://mp.weixin.qq.com/s/RRHN8t017ofOvb4nvlCStg)
 - [高性能高并发商品秒杀系统设计与优化](https://github.com/Grootzz/seckill)
@@ -183,7 +183,7 @@ IntelliJ IDEA 2019.3.3 x64
 
 ## 进阶项目核心知识点
 
-![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/points.png)
+![](https://github.com/PJB0911/SecKill-ii/blob/master/images/points.png)
 
 ------
 
@@ -191,19 +191,19 @@ IntelliJ IDEA 2019.3.3 x64
 
 ### 项目结构—数据模型
 
-![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/models.png)
+![](https://github.com/PJB0911/SecKill-ii/blob/master/images/models.png)
 
-![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/datamodels.png)
+![](https://github.com/PJB0911/SecKill-ii/blob/master/images/datamodels.png)
 
 ### 项目结构—DAO/Service/Controller结构
 
-![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/classmodels.png)
+![](https://github.com/PJB0911/SecKill-ii/blob/master/images/classmodels.png)
 
 ### 全局异常处理类
 
-在之前的基础项目中，抛出的`BizException`会被`BaseController`拦截到，并进行相应处理。但是如果前端发送到后端的URL找不到，即**404/405错误**，此时根本进入不了后端的`Controller`，需要处理。
+在[基础项目SecKill-i](https://github.com/PJB0911/SecKill-i)中，抛出的`BizException`会被`BaseController`拦截到，并进行相应处理。但是如果前端发送到后端的URL找不到，即**404/405错误**，此时根本进入不了后端的`Controller`，需要处理。
 
-新建一个`controller.GlobalExceptionHandler`的类，整个类加上`@ControllerAdvice`接口，表示这是一个**AOP增强类**，在什么时候增强呢？就需要我们编写。
+1  新建一个`controller.GlobalExceptionHandler`的类，整个类加上`@ControllerAdvice`接口，表示这是一个**AOP增强类**。
 
 ```java
 @ControllerAdvice
@@ -233,7 +233,7 @@ public class GlobalExceptionHandler {
 }
 ```
 
-最后还有一步，在Spring配置文件中添加：
+2 在**application.properties**配置文件中添加：
 
 ```properties
 #处理404/405
@@ -241,12 +241,16 @@ spring.mvc.throw-exception-if-no-handler-found=true
 spring.resources.add-mappings=false
 ```
 
-这样，404/405错误会触发`NoHandlerFoundException`，然后被`GlobalExceptionHandler`捕获到。
+如此，404/405错误会触发`NoHandlerFoundException`，然后被`GlobalExceptionHandler`捕获到。
 
 ------
 
 ## 项目云端部署
-
+阿里云ECS服务器
+- 1台用于mysql/redis/RocketMQ服务器
+- 1台用于Nginx反向代理服务器
+- 3台用于秒杀后端服务器（2核4G）。
+阿里云CDN服务器
 ### 数据库部署
 
 使用`mysqldump -uroot -ppassword --databases dbName`指令，即可将开发环境的数据库dump成SQL语句。在云端服务器，直接用MySQL运行dump出来的SQL语句即可。
@@ -303,7 +307,7 @@ nohup java -Xms400m -Xmx400m -XX:NewSize=200m -XX:MaxNewSize=200m -jar miaosha.j
 
 ------
 
-## jmeter性能压测
+### jmeter性能压测
 
 本项目使用`jmeter`来进行并发压测。使用方法简单来说就是新建一个线程组，添加需要压测的接口地址，查看结果树和聚合报告。
 
