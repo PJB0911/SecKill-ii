@@ -246,11 +246,12 @@ spring.resources.add-mappings=false
 ------
 
 ## 项目云端部署
-阿里云ECS服务器
+**阿里云ECS服务器**
 - 1台用于mysql/redis/RocketMQ服务器
 - 1台用于Nginx反向代理服务器
 - 3台用于秒杀后端服务器（2核4G）。
-阿里云CDN服务器
+
+**阿里云CDN服务器**：页面静态化
 ### 数据库部署
 
 使用`mysqldump -uroot -ppassword --databases dbName`指令，即可将开发环境的数据库dump成SQL语句。在云端服务器，直接用MySQL运行dump出来的SQL语句即可。
