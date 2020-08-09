@@ -247,9 +247,9 @@ spring.resources.add-mappings=false
 
 ## 项目云端部署
 **阿里云ECS服务器**
-- 1台用于mysql/redis/RocketMQ服务器
-- 1台用于Nginx反向代理服务器
-- 3台用于秒杀后端服务器（2核4G）。
+- 1台用于mysql/redis/RocketMQ服务器（2核4G）
+- 1台用于Nginx反向代理服务器（2核4G）
+- 3台用于秒杀后端服务器（2核4G）
 
 **阿里云CDN服务器**：页面静态化
 ### 数据库部署
@@ -258,7 +258,8 @@ spring.resources.add-mappings=false
 
 ### 项目打包
 
-本项目打成`jar`包，在服务器直接用`java -jar`运行。`maven`打`jar`包首先需要添加以下属性，以便在打包的时候知道JDK的位置，不然报错。
+本项目打成`jar`包，在服务器直接用`java -jar`运行。
+1. `maven`打`jar`包首先需要添加以下属性，以便在打包的时候知道JDK的位置，不然报错。
 
 ```xml
 <properties>
@@ -269,7 +270,7 @@ spring.resources.add-mappings=false
 </properties>
 ```
 
-然后添加`spring-boot-maven-plugin`插件，使打包后的文件，能够找到Spring Boot的入口类，即`App.java`。
+2. 添加`spring-boot-maven-plugin`插件，使打包后的文件，能够找到Spring Boot的入口类，即`App.java`。
 
 ```xml
 <plugins>
