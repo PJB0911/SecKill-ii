@@ -552,11 +552,11 @@ Nginx引入了一种比线程更小的概念，那就是“**协程**”。协�
 
 用户第一次登录成功后，服务器会产生一个cookie,cookie中的value为Tomcat生成的`SessionId`，向Redis服务器中设置键，该键的key为cookie的value（即sessionId），值为**UserModel序列化的字符串**（`UserModel`类实现`Serializable`接口），并为该键设置过期时间（30分钟），从而实现分布式会话。
 
-引入两个`jar`包，分别是`spring-boot-starter-data-redis`和`spring-session-data-redis`，某些情况下，可能还需要引入`spring-security-web`。
+1. 引入两个`jar`包，分别是`spring-boot-starter-data-redis`和`spring-session-data-redis`，某些情况下，可能还需要引入`spring-security-web`。
 
-`config`包下新建一个`RedisConfig`的类，暂时没有任何方法和属性，添加`@Component`和`@EnableRedisHttpSession(maxInactiveIntervalInSeconds=3600)`注解让Spring识别并自动配置过期时间。
+2. `config`包下新建一个`RedisConfig`的类，暂时没有任何方法和属性，添加`@Component`和`@EnableRedisHttpSession(maxInactiveIntervalInSeconds=3600)`注解让Spring识别并自动配置过期时间。
 
-接着在`application.properties`里面添加Redis相关连接配置。
+3. 在`application.properties`里面添加Redis相关连接配置。
 
 ```properties
 spring.redis.host=RedisServerIp
