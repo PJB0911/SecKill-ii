@@ -56,8 +56,9 @@
     * [Nginx Proxy Cache缓存效果](#nginx-proxy-cache缓存效果)
   * [Nginx lua脚本](#nginx-lua脚本)
     * [lua脚本实战](#lua脚本实战)
-  * [OpenResty—Shared dict](#openrestyshared-dict)
+  * [OpenResty—Shared dict缓存](#openrestyshared-dict缓存)
     * [Shared dict缓存效果](#shared-dict缓存效果)
+  * [OpenResty—直接读取Redis缓存](#OpenResty—直接读取Redis缓存)
   * [小结](#小结-3)
   * [下一步优化方向](#下一步优化方向-3)
 * [查询优化之页面静态化](#查询优化之页面静态化)
@@ -171,7 +172,7 @@ IntelliJ IDEA 2019.3.3 x64
 - 云端部署，性能压测
 - 单机服务器优化：Tomcat并发容量
 - 分布式扩展：Nginx反向代理，负载均衡，分布式会话
-- 查询性能优化：商品页面缓存、数据热点缓存（多级缓存：redis/guava/nginx lua）
+- 查询性能优化：商品页面缓存、数据热点缓存（多级缓存：redis/guava/nginx）
 - 查询性能优化：页面静态化(CDN)，前后端分离
 - 交易性能优化：库存缓存、异步处理（RocketMQ）、缓存一致性
 - 流量削峰：秒杀令牌，秒杀大闸，队列泄洪
@@ -959,7 +960,7 @@ location /helloworld {
 - [Nginx+lua+openresty系列 | 第六篇：Lua入门](https://mp.weixin.qq.com/s?__biz=MzU5NzgwNDIyNQ==&mid=2247483763&idx=1&sn=5aad2f0d3f73d7e3e474ccf568e0f5a9&chksm=fe4c94ddc93b1dcbf829ccc03af6606d2fb8f25c60682691ba19a593721004d7b500e675eab9&token=480040588&lang=zh_CN#rd)
 
 
-### OpenResty—Shared dict
+### OpenResty—Shared dict缓存
 
 OpenResty对Nginx进行了扩展，添加了很多功能，比如集成了lua开发环境、提供了对MySQL、Redis、Memcached的支持等。比原版Nginx使用起来更加方便。
 
@@ -1024,22 +1025,44 @@ location /luaitem/get{
 ```
 
 
-**参考资料：**
-- [Nginx+lua+openresty系列 | 第一篇：openresty介绍](https://mp.weixin.qq.com/s?__biz=MzU5NzgwNDIyNQ==&mid=2247483694&idx=1&sn=9f533a334010cfe1964f42e6cffe1990&chksm=fe4c9480c93b1d96cba4b60550f5115a774b15dade18b235724804156536f5b883a5d0aa5a1f&token=1136700187&lang=zh_CN#rd)
--
-
-
 #### Shared dict缓存效果
 
-压测`/luaitem/get`，峰值TPS在**4000**左右，平均响应时间**150ms**左右，比`proxy cache`要高出不少，跟使用两层缓存效果差不多。
+压测`/luaitem/get`，峰值TPS在**4000**左右，平均响应时间**150ms**左右，比`proxy cache`要高出不少。
 
-使用Ngxin的Shared dict，**把压力转移到了Nginx服务器**，**后面两个Tomcat服务器压力减小**。同时**减少了与后面两个Tomcat服务器、Redis服务器和数据库服务器的网络I/O**，当网络I/O成为瓶颈时，Shared dict不失为一种好方法。
+使用Ngxin的Shared dict，**把压力转移到了Nginx服务器**，**后面3台Tomcat服务器压力减小**。同时**减少了与后面3台Tomcat服务器、Redis服务器和数据库服务器的网络I/O**，当网络I/O成为瓶颈时，Shared dict不失为一种好方法。
 
-最后，Shared dict依然受制于缓存容量和缓存更新问题。
+**缺点**:Shared dict依然受制于**缓存容量**和**缓存更新**问题。
+
+
+**参考资料：**
+- [Nginx+lua+openresty系列 | 第一篇：openresty介绍](https://mp.weixin.qq.com/s?__biz=MzU5NzgwNDIyNQ==&mid=2247483694&idx=1&sn=9f533a334010cfe1964f42e6cffe1990&chksm=fe4c9480c93b1d96cba4b60550f5115a774b15dade18b235724804156536f5b883a5d0aa5a1f&token=1136700187&lang=zh_CN#rd)
+- [Nginx+lua+openresty系列 | 第七篇：openresty企业级应用1](https://mp.weixin.qq.com/s?__biz=MzU5NzgwNDIyNQ==&mid=2247483779&idx=1&sn=7a06b401f3c730027662815623a957a7&chksm=fe4c942dc93b1d3b2c8372e3273df9609a19eb3a0b9639c53702bf49d40bd5d6f17709d9a9fb&token=1578665362&lang=zh_CN#rd)
+- [基于nginx+lua+redis实现的多级缓存架构存取的控制逻辑](https://www.cnblogs.com/z-3FENG/articles/9592072.html)
+
+
+### OpenResty—直接读取Redis缓存
+
+Nginx的本地Shared dict内存缓存受制于**缓存容量**和**缓存更新**问题，OpenResty提供了可直接从Redis服务器中读取缓存的支持，可以解决**缓存脏数据**和**缓存容量**的问题。
+
+平常我们使用缓存都是在后端的服务器中进行判断，是否去查询redis中的数据。在企业中一般采用Redis集群实现读写分离，redis master负责写，redis slave服务器只负责读。Nginx通过lua脚本直接从redis slave服务器中获取数据，减少对后端的tomcat中的请求。
+
+本项目只有1台Redis服务器。
+
+
+
+**参考资料：**
+- [Nginx+Lua+Redis 实现高性能缓存数据读取](https://segmentfault.com/p/1210000011625271/read)
+- [使用nginx+lua脚本读写redis缓存](https://my.oschina.net/u/1175305/blog/1799941)
+
 
 ### 小结
 
-本节首先使用**Redis**对商品详情信息进行了缓存。然后使用本地缓存**guava**在Redis之前再做一层缓存。随后，本节尝试了将缓存提前，提到离客户端更近的Nginx服务器上，减少网络I/O，开启了Nginx的**proxy cache**，但是由于proxy cache是基于文件系统的，有磁盘I/O，效果得不偿失。最后，本节使用**OpenResty Shared Dict+Nginx+Lua**将Nginx的缓存从磁盘提到内存，提升了性能。
+本节通过redis/guava/nginx实现了多级缓存，
+
+1. 首先使用**Redis**对商品详情信息缓存。
+2. 使用本地缓存**guava**在Redis之前再做一层缓存。
+3. 将缓存提前，提到离客户端更近的Nginx服务器上，减少网络I/O，开启了Nginx的**proxy cache**，由于proxy cache是基于文件系统的，有磁盘I/O，性能没有得到提升。
+4. 使用**OpenResty Shared Dict+Nginx+Lua**将Nginx的缓存从磁盘提到服务器内存，提升了性能。
 
 ### 下一步优化方向
 

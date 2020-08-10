@@ -16,4 +16,10 @@ public interface CacheService {
      * @param key 键
      */
     Object getFromCommonCache(String key);
+
+    /**
+     * 删除缓存
+     * @param key 键
+     */
+    public void  delCommCache(String key);
 }
