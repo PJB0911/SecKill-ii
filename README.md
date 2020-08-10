@@ -388,7 +388,7 @@ public class WebServerConfiguration implements WebServerFactoryCustomizer<Config
 ```
 
 
-### 优化后的效果
+### 优化效果
 
 未调整线程数之前（2核CPU），200*50个请求，TPS在**150**左右，平均响应**1000毫秒**。调整之后，TPS在**250**左右，平均响应**400**毫秒。
 
