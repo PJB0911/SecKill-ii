@@ -1045,11 +1045,16 @@ location /luaitem/get{
 
 ### OpenResty—直接读取Redis缓存
 
+
 Nginx的本地Shared dict内存缓存受制于**缓存容量**和**缓存更新**问题，OpenResty提供了可直接从Redis服务器中读取缓存的支持，可以解决**缓存脏数据**和**缓存容量**的问题。
 
 平常我们使用缓存都是在后端的服务器中进行判断，是否去查询redis中的数据。在企业中一般采用Redis集群实现读写分离，redis master负责写主服务，redis slave服务器只负责读从服务。Nginx通过lua脚本直接从redis slave服务器中获取数据，减少对后端的tomcat中的请求。
 
 本项目只有1台Redis服务器,所以Nginx直接从redis服务器获取缓存。
+
+
+![](https://github.com/PJB0911/SecKill-ii/blob/master/images/nginx-redis.png)
+
 
 1. 在lua文件夹下，新建一个`itemshareddict.lua`脚本。
 
@@ -1079,7 +1084,7 @@ location /itemredis/get{
 }
 ```
 
-**请求流程**：当访问`/itemredis/get?id=xxx`的时候，会先从**Redis读从服务器缓存**获取数据，如果有，直接返回给前端；如果没有，就会请求`item/get?id=xxx`这个URL后端接口，后端先从后端服务器**本地guava缓存**中获取，如果guava缓存没有，这时不用去查询**Redis缓存**，因为nginx服务器已经查询过redis中没有缓存，直接去**数据库**查询并存放到**Redis主写服务**，然后主从同步到**Redis读从服务器**。
+**请求流程**：当访问`/itemredis/get?id=xxx`的时候，会先从**Redis读从服务器缓存**获取数据，如果有，直接返回给前端；如果没有，就会回源请求`item/get?id=xxx`这个URL后端接口，后端先从后端服务器**本地guava缓存**中获取，如果guava缓存没有，这时不用去查询**Redis缓存**，因为nginx服务器已经查询过redis中没有缓存，直接去**数据库**查询并存放到**Redis主写服务**，然后主从同步到**Redis读从服务器**。
 
 
 **参考资料：**
