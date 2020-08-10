@@ -56,7 +56,7 @@
     * [Nginx Proxy Cache缓存效果](#nginx-proxy-cache缓存效果)
   * [Nginx lua脚本](#nginx-lua脚本)
     * [lua脚本实战](#lua脚本实战)
-  * [OpenResty—Shared dict缓存](#openrestyshared-dict缓存)
+  * [OpenResty—Shared dict缓存](#OpenResty—Shared dict缓存)
     * [Shared dict缓存效果](#shared-dict缓存效果)
   * [OpenResty—直接读取Redis缓存](#OpenResty—直接读取Redis缓存)
   * [缓存雪崩、缓存穿透、缓存更新](#缓存雪崩、缓存穿透、缓存更新)
