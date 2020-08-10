@@ -31,11 +31,10 @@
   * [开启Tomcat Access Log验证](#开启tomcat-access-log验证)
   * [Nginx反向代理长连接优化](#nginx反向代理长连接优化)
   * [分布式扩展后的效果](#分布式扩展后的效果)
-  * [Nginx高性能原因—epoll多路复用](#nginx高性能原因epoll多路复用)
-  * [Nginx高性能原因—master-worker进程模型](#nginx高性能原因master-worker进程模型)
-    * [Ngxin进程结构](#ngxin进程结构)
-    * [Master-worker高效原理](#master-worker高效原理)
-  * [Nginx高性能原因—协程机制](#nginx高性能原因协程机制)
+  * [扩展——Nginx高性能原因](#扩展——Nginx高性能原因)
+	* [1.epoll多路复用](#1.epoll多路复用)
+	* [2.master-worker进程模型](2.master-worker进程模型))
+	* [3.协程机制](#3.协程机制)
   * [小结](#小结-1)
   * [下一步优化方向](#下一步优化方向-1)
 * [分布式会话](#分布式会话)
@@ -417,7 +416,7 @@ public class WebServerConfiguration implements WebServerFactoryCustomizer<Config
 
 购买域名，将Nginx服务器的ip和域名miaoshaserver绑定
 
-用户通过`nginx/html/resources`访问前端静态页面。而Ajax请求则会通过Nginx反向代理到3台不同的秒杀应用服务器。
+用户通过`nginx/html/resources`访问前端静态页面。而Ajax请求则会通过Nginx反向代理到3台不同的秒杀应用服务器，实现动静分离。
 
 将静态资源上传到Nginx服务器相应目录`html/resource`，并修改`nginx.conf`中的
 
@@ -428,16 +427,17 @@ location /resources/ {
 }
 ```
 
-用户就能通过```http://miaoshaserver/resources/```访问到静态页面。
+用户就能通过```http://miaoshaserver/resources/```访问到Nginx服务器上的静态页面。
 
-### Nginx反向代理处理Ajax请求
+### Nginx反向代理处理Ajax动态请求
 
-Ajax请求通过Nginx反向代理到两台应用服务器，实现负载分担。在`nginx.conf`里面添加以下字段：
+Ajax请求通过Nginx服务器反向代理到3台应用服务器，实现负载均衡。在`nginx.conf`里面添加以下字段：
 
 ```text
 upstream backend_server{
     server miaoshaApp1_ip weight=1;
     server miaoshaApp2_ip weight=1;
+	server miaoshaApp3_ip weight=1;
 }
 ...
 server{
@@ -450,7 +450,7 @@ server{
 }
 ```
 
-这样，用`http://miaoshaserver`访问Nginx服务器，请求会被均衡地代理到下面的两个backend服务器上。
+这样，通过`http://miaoshaserver`访问Nginx服务器，请求会被均衡代理到下面的3个秒杀应用服务器上。
 
 ### 开启Tomcat Access Log验证
 
@@ -470,6 +470,7 @@ Nginx服务器与**前端**的连接是**长连接**，但是与后端的**代�
 upstream backend_server{
     server miaoshaApp1_ip weight=1;
     server miaoshaApp2_ip weight=1;
+	server miaoshaApp3_ip weight=1;
     keepalive 30;
 }
 ...
@@ -486,7 +487,7 @@ server{
 }
 ```
 
-### 分布式扩展后的效果
+### 优化效果
 
 - **单机环境**下，发送1000*30个请求，TPS在**1400**左右，平均响应时间**460**毫秒。CPU的`us`高达8.0，`loadaverage`三个指标加起来接近于2了（CPU核数）。
 - **分布式**扩展后，TPS在**1700**左右，平均响应时间**440**毫秒。但是CPU的`us`只有2.5左右，`loadaverage`1分钟在0.5左右，服务器的压力小了很多，有更多的并发提升空间。
@@ -494,7 +495,9 @@ server{
 
 通过`netstat -an | grep miaoshaApp1_ip`可以查看Nginx服务器与后端服务器的连接情况，没开启长连接时，每次连接端口都在变，开启后，端口维持不变。
 
-### Nginx高性能原因—epoll多路复用
+### 扩展——Nginx高性能原因
+
+#### 1. epoll多路复用
 
 在了解**epoll多路复用**之前，先看看**Java BIO**模型，也就是Blocking IO，阻塞模型。当客户端与服务器建立连接之后，通过`Socket.write()`向服务器发送数据，只有当数据写完之后，才会发送。如果当Socket缓冲区满了，那就不得不阻塞等待。
 
@@ -502,17 +505,17 @@ server{
 
 而**epoll模型**，在**Linux Select**模型之上，新增了**回调函数**，一旦某个连接发生变化，直接执行回调函数，不用遍历，效率更高。
 
-### Nginx高性能原因—master-worker进程模型
+#### 2.master-worker进程模型
 
 通过`ps -ef|grep nginx`命令可以看到有两个Nginx进程，一个标注为`master`，一个标注为`worker`，而且`worker`进程是`master`进程的子进程。这种父子关系的好处就是，`master`进程可以管理`worker`进程。
 
-![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/ngxin2.jpg)
+![](https://github.com/PJB0911/SecKill-ii/blob/master/images/ngxin2.jpg)
 
-#### Ngxin进程结构
+**Ngxin进程结构**
 
-![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/nginx.png)
+![](https://github.com/PJB0911/SecKill-ii/blob/master/images/nginx.png)
 
-#### Master-worker高效原理
+**Master-worker高效原理**
 
 客户端的请求，并不会被`master`进程处理，而是交给下面的`worker`进程来处理，多个`worker`进程通过“**抢占**”的方式，取得处理权。如果某个`worker`挂了，`master`会立刻感知到，用一个新的`worker`代替。这就是Nginx高效率的原因之一，也是可以平滑重启的原理。
 
@@ -520,7 +523,7 @@ server{
 
 综上，**epoll机制**+**master-worker机制**使得`worker`进程可以高效率地执行单线程I/O操作。
 
-### Nginx高性能原因—协程机制
+#### 3.Nginx高性能原因—协程机制
 
 Nginx引入了一种比线程更小的概念，那就是“**协程**”。协程依附于内存模型，切换开销更小；遇到阻塞，Nginx会立刻剥夺执行权；由于在同一个线程内，也不需要加锁。
 
@@ -528,14 +531,14 @@ Nginx引入了一种比线程更小的概念，那就是“**协程**”。协�
 
 这一节对单机系统进行了分布式扩展，使得吞吐量和响应时间都有了一定提升。虽然提升不大，但是单个服务器的压力明显降低。
 
-1. 首先把前端资源部署到了Nginx服务器。
-2. 然后把Nginx作为反向代理服务器，把后端项目部署到了另外两台服务器。
-3. 接着优化了Nginx与后端服务器的连接。
-4. 最后分析了Nginx高效的原因，包括epoll多路复用、master-worker机制、协程机制。
+1. 前端静态资源部署到了Nginx服务器。
+2. Nginx作为反向代理服务器，把后端项目部署到了3台秒杀应用服务器。
+3. 优化Nginx与后端服务器的连接。
+4. 分析了Nginx高效的原因，包括epoll多路复用、master-worker机制、协程机制。
 
 ### 下一步优化方向
 
-之前的用户登录凭证，是放在`HttpSession`里面的，而`HttpSession`又存放在Tomcat服务器。一旦实现了分布式扩展，多台服务器无法共享同一个Session，所以就需要进入**分布式会话**。
+基础项目的用户登录凭证，是存放在`HttpSession`里面的，而`HttpSession`又存放在Tomcat服务器。一旦实现了分布式扩展，多台服务器无法共享同一个Session，所以就需要引入**分布式会话**。
 
 ------
 
