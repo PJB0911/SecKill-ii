@@ -186,7 +186,7 @@ IntelliJ IDEA 2019.3.3 x64
 
 ## 项目整体架构
 
-![](https://github.com/PJB0911/SecKill-ii/blob/master/images/秒杀架构.jpg)
+![](https://github.com/PJB0911/SecKill-ii/blob/master/images/%E7%A7%92%E6%9D%80%E6%9E%B6%E6%9E%84.jpg)
 
 
 ## 进阶项目核心知识点
