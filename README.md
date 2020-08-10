@@ -58,7 +58,7 @@
     * [lua脚本实战](#lua脚本实战)
   * [OpenResty—Shared dict缓存](#openrestyshared-dict缓存)
     * [Shared dict缓存效果](#shared-dict缓存效果)
-  * [OpenResty—直接读取Redis缓存](#openResty—直接读取Redis缓存)
+  * [OpenResty—直接读取Redis缓存](#OpenResty—直接读取Redis缓存)
   * [缓存雪崩、缓存穿透、缓存更新](#缓存雪崩、缓存穿透、缓存更新)
   * [小结](#小结-3)
   * [下一步优化方向](#下一步优化方向-3)
@@ -1047,7 +1047,7 @@ Nginx的本地Shared dict内存缓存受制于**缓存容量**和**缓存更新*
 
 平常我们使用缓存都是在后端的服务器中进行判断，是否去查询redis中的数据。在企业中一般采用Redis集群实现读写分离，redis master负责写，redis slave服务器只负责读。Nginx通过lua脚本直接从redis slave服务器中获取数据，减少对后端的tomcat中的请求。
 
-本项目只有1台Redis服务器。
+本项目只有1台Redis服务器,所以Nginx直接从redis服务器获取缓存。
 
 1. 在lua文件夹下，新建一个`itemshareddict.lua`脚本。
 
