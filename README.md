@@ -418,7 +418,7 @@ public class WebServerConfiguration implements WebServerFactoryCustomizer<Config
 
 ### Nginx部署前端静态资源
 
-**负载均衡**：将请求分摊到多个服务器上进行执行，保证所有后端服务器都将性能充分发挥，从而保持服务器集群的整体性能最优。
+**负载均衡**：将请求分摊到多个服务器上进行执行，保证所有后端服务器都将性能充分发挥，从而保持服务器集群的整体性能最优。[Nginx参考资料](https://blog.csdn.net/yao_it/article/details/86597499)
 
 购买域名，将Nginx服务器的ip和域名miaoshaserver绑定
 
@@ -858,7 +858,7 @@ Nginx Proxy Cache的原理是基于**文件系统**的，它把后端返回的�
 **参考资料：**
 - [nginx 反向代理之 proxy_cache](https://www.cnblogs.com/yyxianren/p/10832172.html)
 - [nginx proxy_cache 缓存配置](https://blog.csdn.net/dengjiexian123/article/details/53386586)
-- [](https://mp.weixin.qq.com/s?__biz=MzU5NzgwNDIyNQ==&mid=2247483758&idx=1&sn=fcd46827f22a6276e505a6e6dc5ace32&chksm=fe4c94c0c93b1dd64ea0471121febe9cabab49882f0f9ebf67049b2d4e051ccb6f604bf144c4&token=1811637810&lang=zh_CN#rd)
+- [nginx缓存](https://mp.weixin.qq.com/s?__biz=MzU5NzgwNDIyNQ==&mid=2247483758&idx=1&sn=fcd46827f22a6276e505a6e6dc5ace32&chksm=fe4c94c0c93b1dd64ea0471121febe9cabab49882f0f9ebf67049b2d4e051ccb6f604bf144c4&token=1811637810&lang=zh_CN#rd)
 
 在`nginx.conf`里面配置`proxy cache`：
 
@@ -903,17 +903,25 @@ lua脚本可以挂载在Nginx处理请求的起始、worker进程启动、内容
 
 #### lua脚本实战
 
-在OpenResty下新建一个lua文件夹，专门用来存放lua脚本。新建一个`init.lua`。
+在OpenResty下新建一个lua文件夹，专门用来存放lua脚本。
+
+1. 新建一个`init.lua`。
 
 ```lua
-ngx.log(ngx.ERR, "init lua success");
+	ngx.log(ngx.ERR, "init lua success");
 ```
 
-在`nginx.conf`里面添加一个`init_by_lua_file   ../lua/init.lua;`的字段，指定上述lua脚本的位置。这样，当Nginx启动的时候，就会执行这个lua脚本，输出"init lua success"。
+在`nginx.conf`里面添加一个`init_by_lua_file   ../lua/init.lua;`的字段，指定上述lua脚本的位置。当Nginx启动的时候，就会执行这个lua脚本，输出"init lua success"。
 
-当然，在Nginx启动的时候，挂载lua脚本并没有什么作用。一般在内容输出阶段，挂载lua脚本。
+ps. 在Nginx启动的时候，挂载lua脚本并没有什么作用。一般在内容输出阶段，挂载lua脚本。
 
-新建一个`staticitem.lua`，用`ngx.say()`输出一段字符串。在`nginx.conf`里面添加一个新的location：
+2. 新建一个`staticitem.lua`。
+ 
+```lua
+	ngx.say("hello static item lua");
+```
+
+在`nginx.conf`里面添加一个新的location：
 
 ```text
 location /staticitem/get{
@@ -922,9 +930,29 @@ location /staticitem/get{
 }
 ```
 
-访问`/staticitem/get`，在页面就会响应出`staticitem.lua`的内容。
+访问`/staticitem/get`，在页面就会响应出`hello static item lua`的内容。
 
-新建一个`helloworld.lua`，使用`ngx.exec("/item/get?id=1")`访问某个URL。同样在`nginx.conf`里面添加一个`helloworld`location。这样，当访问`/helloworld`的时候就会跳转到`item/get?id=1`这个URL上。
+3. 新建一个`helloworld.lua`。
+ 
+```lua
+	ngx.exec("/item/get?id=1");
+```
+
+在`nginx.conf`里面添加一个`helloworld`location。
+
+```text
+location /helloworld {
+    default_type "application/json";
+    content_by_lua_file ../lua/helloworld.lua;
+}
+```
+
+这样，当访问`/helloworld`的时候就会跳转到`item/get?id=1`这个URL上。
+
+**参考资料：**
+- [Nginx+lua+openresty系列 | 第六篇：Lua入门](https://mp.weixin.qq.com/s?__biz=MzU5NzgwNDIyNQ==&mid=2247483763&idx=1&sn=5aad2f0d3f73d7e3e474ccf568e0f5a9&chksm=fe4c94ddc93b1dcbf829ccc03af6606d2fb8f25c60682691ba19a593721004d7b500e675eab9&token=480040588&lang=zh_CN#rd)
+- 
+
 
 ### OpenResty—Shared dict
 
@@ -987,6 +1015,12 @@ location /luaitem/get{
     content_by_lua_file ../lua/itemshareddict.lua;
 }
 ```
+
+
+**参考资料：**
+- [Nginx+lua+openresty系列 | 第一篇：openresty介绍](https://mp.weixin.qq.com/s?__biz=MzU5NzgwNDIyNQ==&mid=2247483694&idx=1&sn=9f533a334010cfe1964f42e6cffe1990&chksm=fe4c9480c93b1d96cba4b60550f5115a774b15dade18b235724804156536f5b883a5d0aa5a1f&token=1136700187&lang=zh_CN#rd)
+-
+
 
 #### Shared dict缓存效果
 
