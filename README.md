@@ -58,7 +58,7 @@
     * [lua脚本实战](#lua脚本实战)
   * [OpenResty—Shared dict缓存](#openRestyShared-dict缓存)
     * [Shared dict缓存效果](#shared-dict缓存效果)
-  * [OpenResty—直接读取Redis缓存](#OpenResty—直接读取Redis缓存)
+  * [OpenResty—直接读取Redis缓存](#openResty直接读取Redis缓存)
   * [缓存雪崩、缓存穿透、缓存更新](#缓存雪崩、缓存穿透、缓存更新)
   * [小结](#小结-3)
   * [下一步优化方向](#下一步优化方向-3)
