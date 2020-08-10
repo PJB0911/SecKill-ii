@@ -1109,12 +1109,13 @@ location /itemredis/get{
 
 ### 小结
 
-本节通过redis/guava/nginx实现了多级缓存，
+本节通过redis/guava/nginx实现了多级缓存：
 
 1. 首先使用**Redis**对商品详情信息缓存。
 2. 使用本地缓存**guava**在Redis之前再做一层缓存。
 3. 将缓存提前，提到离客户端更近的Nginx服务器上，减少网络I/O，开启了Nginx的**proxy cache**，由于proxy cache是基于文件系统的，有磁盘I/O，性能没有得到提升。
-4. 使用**OpenResty Shared Dict+Nginx+Lua**将Nginx的缓存从磁盘提到服务器内存，提升了性能。
+4. 使用**OpenResty Shared Dict+Nginx+Lua**将Nginx的缓存从磁盘提到服务器内存，减少了网络IO,提升了性能。
+5. Shared dict存在**缓存容量**和**缓存更新**问题，使用nginx+lua脚本读写redis缓存，但相比于Shared dict增加了网络IO。
 
 ### 下一步优化方向
 
