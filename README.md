@@ -951,7 +951,6 @@ location /helloworld {
 
 **参考资料：**
 - [Nginx+lua+openresty系列 | 第六篇：Lua入门](https://mp.weixin.qq.com/s?__biz=MzU5NzgwNDIyNQ==&mid=2247483763&idx=1&sn=5aad2f0d3f73d7e3e474ccf568e0f5a9&chksm=fe4c94ddc93b1dcbf829ccc03af6606d2fb8f25c60682691ba19a593721004d7b500e675eab9&token=480040588&lang=zh_CN#rd)
-- 
 
 
 ### OpenResty—Shared dict
@@ -960,17 +959,19 @@ OpenResty对Nginx进行了扩展，添加了很多功能，比如集成了lua开
 
 OpenResty的Shared dict是一种类似于`HashMap`的Key-Value**内存**结构，对所有`worker`进程可见，并且可以指定LRU淘汰规则。
 
-和配置`proxy cache`一样，我们需要指定一个名为`my_cache`，大小为128m的`lua_shared_dict`：
+1. 和配置`proxy cache`一样，我们需要指定一个名为`my_cache`，大小为128m的`lua_shared_dict`：
 
 ```text
 upstream backend_server
+
 ···
 lua_shared_dict my_cahce 128m;
 ```
 
-在lua文件夹下，新建一个`itemshareddict.lua`脚本，编写两个函数。
+2. 在lua文件夹下，新建一个`itemshareddict.lua`脚本，编写两个函数。
 
 ```lua
+--取缓存
 function get_from_cache(key)
     --类似于拿到缓存对象
     local cache_ngx = ngx.shared.my_cache
@@ -978,7 +979,7 @@ function get_from_cache(key)
     local value = cache_ngx.get(key)
     return value
 end
-
+--存缓存
 function set_to_cache(key,value,exptime)
     if not exptime then 
         exptime = 0
@@ -989,7 +990,7 @@ function set_to_cache(key,value,exptime)
 end
 ```
 
-然后编写“main"函数：
+3. 编写“main"函数。
 
 ```lua
 --得到请求的参数，类似Servlet的request.getParameters
@@ -1007,7 +1008,7 @@ end
 ngx.say(item_model)
 ```
 
-新建一个`luaitem/get`的location，注意`default_type`是json。
+4. 新建一个`luaitem/get`的location。
 
 ```text
 location /luaitem/get{
