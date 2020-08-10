@@ -402,7 +402,8 @@ public class WebServerConfiguration implements WebServerFactoryCustomizer<Config
 
 ### 下一步优化方向
 
-一是对服务器进行**分布式扩展**，二是**优化SQL查询**，比如添加索引。
+1. 服务器进行**分布式扩展**
+2. **优化SQL查询**，比如添加索引。
 
 ------
 
@@ -410,7 +411,7 @@ public class WebServerConfiguration implements WebServerFactoryCustomizer<Config
 
 ### 项目架构
 
-![](https://github.com/PJB0911/SecKill-ii/blob/master/images/frame2.png)
+![](https://github.com/PJB0911/SecKill-ii/blob/master/images/frame3.png)
 
 ### Nginx部署前端静态资源
 
@@ -418,11 +419,7 @@ public class WebServerConfiguration implements WebServerFactoryCustomizer<Config
 
 用户通过`nginx/html/resources`访问前端静态页面。而Ajax请求则会通过Nginx反向代理到3台不同的秒杀应用服务器。
 
-**项目架构**：
-
-![](https://github.com/PJB0911/SecKill-ii/blob/master/images/frame3.png)
-
-将静态资源上传到Nginx服务器相应目录，并修改`nginx.conf`中的
+将静态资源上传到Nginx服务器相应目录`html/resource`，并修改`nginx.conf`中的
 
 ```text
 location /resources/ {
