@@ -414,6 +414,8 @@ public class WebServerConfiguration implements WebServerFactoryCustomizer<Config
 
 ### Nginx部署前端静态资源
 
+负载均衡：将请求分摊到多个服务器上进行执行，保证所有后端服务器都将性能充分发挥，从而保持服务器集群的整体性能最优。
+
 购买域名，将Nginx服务器的ip和域名miaoshaserver绑定
 
 用户通过`nginx/html/resources`访问前端静态页面。而Ajax请求则会通过Nginx反向代理到3台不同的秒杀应用服务器，实现动静分离。
@@ -431,7 +433,9 @@ location /resources/ {
 
 ### Nginx反向代理处理Ajax动态请求
 
-Ajax请求通过Nginx服务器反向代理到3台应用服务器，实现负载均衡。在`nginx.conf`里面添加以下字段：
+Ajax请求通过Nginx服务器反向代理到3台应用服务器，因为3台服务器配置相同，采用**加权轮询**实现负载均衡。[负载均衡算法](https://www.cnblogs.com/diantong/p/11208508.html)
+
+在`nginx.conf`里面添加以下字段：
 
 ```text
 upstream backend_server{
@@ -546,9 +550,9 @@ Nginx引入了一种比线程更小的概念，那就是“**协程**”。协�
 
 ### 基于Cookie传输SessionId
 
-就是把Tomcat生成的`SessionId`转存到Redis服务器上，从而实现分布式会话。
+用户第一次登录成功后，服务器会产生一个cookie,cookie中的value为Tomcat生成的`SessionId`，向Redis服务器中设置键，该键的key为cookie的value（即sessionId），值为**UserModel序列化的字符串**（`UserModel`类实现`Serializable`接口），并为该键设置过期时间（30分钟），从而实现分布式会话。
 
-在之前的项目引入两个`jar`包，分别是`spring-boot-starter-data-redis`和`spring-session-data-redis`，某些情况下，可能还需要引入`spring-security-web`。
+引入两个`jar`包，分别是`spring-boot-starter-data-redis`和`spring-session-data-redis`，某些情况下，可能还需要引入`spring-security-web`。
 
 `config`包下新建一个`RedisConfig`的类，暂时没有任何方法和属性，添加`@Component`和`@EnableRedisHttpSession(maxInactiveIntervalInSeconds=3600)`注解让Spring识别并自动配置过期时间。
 
@@ -557,22 +561,23 @@ Nginx引入了一种比线程更小的概念，那就是“**协程**”。协�
 ```properties
 spring.redis.host=RedisServerIp
 spring.redis.port=6379
-spring.redis.database=0
+spring.redis.database=10
 spring.redis.password=
 ```
 
-**最后**！**最后**！**最后**，由于`UserModel`对象会被存到Redis里面，需要被**序列化**，所以要对`UserModel`类实现`Serializable`接口。
 
-这样，之前的代码，就会自动将Session保存到Redis服务器上。
+这样，之前的代码，就会自动将SessionId保存到Redis服务器上。
 
 ```java
 this.httpServletRequest.getSession().setAttribute("IS_LOGIN",true);
 this.httpServletRequest.getSession().setAttribute("LOGIN_USER",userModel);
 ```
 
-### 基于Token传输类似SessionId
+### 基于Token传输
 
-Spring Boot在Redis存入的`SessionId`有多项，不够简洁。一般常用UUID生成类似`SessionId`的唯一登录凭证`token`，然后将生成的`token`作为KEY，`UserModel`作为VALUE存入到Redis服务器。
+Spring Boot在Redis存入的`SessionId`有多项，不够简洁。一般常用UUID生成类似`SessionId`的唯一登录凭证`token`，然后将生成的`token`作为 key，`UserModel`作为VALUE存入到Redis服务器。
+
+在用户登录成功之后，将用户信息存储在redis中，然后生成一个token返回给客户端，这个token为存储在redis中的用户信息的key，这样，当客户端第二次访问服务端时会携带token，首先到redis中获取查询该token对应的用户使用是否存在，避免数据库查询用户次数，从而减轻数据库的访问压力。
 
 ```java
 String uuidToken=UUID.randomUUID().toString();
