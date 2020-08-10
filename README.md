@@ -577,7 +577,9 @@ this.httpServletRequest.getSession().setAttribute("LOGIN_USER",userModel);
 
 Spring Boot在Redis存入的`SessionId`有多项，不够简洁。一般常用UUID生成类似`SessionId`的唯一登录凭证`token`，然后将生成的`token`作为 key，`UserModel`作为VALUE存入到Redis服务器。
 
-在用户登录成功之后，将用户信息存储在redis中，然后生成一个token返回给客户端，这个token为存储在redis中的用户信息的key，这样，当客户端第二次访问服务端时会携带token，首先到redis中获取查询该token对应的用户使用是否存在，避免数据库查询用户次数，从而减轻数据库的访问压力。
+在用户登录成功之后，将用户信息存储在Redis中，然后生成一个Token返回给客户端，这个Token为存储在Redis中的用户信息的key，这样，当客户端第二次访问服务端时会携带Token，首先到Redis中获取查询该token对应的用户使用是否存在，避免数据库查询用户次数，从而减轻数据库的访问压力。
+
+1. 登录时生成 Token
 
 ```java
 String uuidToken=UUID.randomUUID().toString();
@@ -589,7 +591,7 @@ redisTemplate.expire(uuidToken,1, TimeUnit.HOURS);
 return CommonReturnType.create(uuidToken);
 ```
 
-将生成的`token`返回给前端，前端在登录成功之后，将`token`**存放到`localStorage`里面**。
+2. 将生成的`token`返回给前端，前端在登录成功之后，将`token`**存放到`localStorage`里面**。
 
 ```javascript
 if (data.status == "success") {
@@ -600,7 +602,7 @@ if (data.status == "success") {
 }
 ```
 
-前端的下单操作，需要验证登录状态。
+3. 前端的下单操作，需要验证登录状态。
 
 ```javascript
 var token = window.localStorage["token"];
@@ -611,7 +613,7 @@ if (token == null) {
 }
 ```
 
-在请求后端下单接口的时候，需要把这个`token`带上。
+4. 在请求后端下单接口的时候，需要把这个`token`带上。
 
 ```javascript
 $.ajax({
@@ -621,7 +623,7 @@ $.ajax({
 });
 ```
 
-后端之前是使用`SessionId`来获取登录状态的。
+基础项目是使用`SessionId`来获取登录状态的。
 
 ```java
 Boolean isLogin=(Boolean)httpServletRequest.getSession().getAttribute("IS_LOGIN");
@@ -630,7 +632,7 @@ if(isLogin==null||!isLogin.booleanValue())
 UserModel userModel = (UserModel)httpServletRequest.getSession().getAttribute("LOGIN_USER");
 ```
 
-现在利用前端传过来的`token`，从Redis服务器里面获取这个`token`对应的`UserModel`对象。
+分布式会话利用前端携带的`Token`，从Redis服务器里面获取这个`Token`对应的`UserModel`对象。
 
 ```java
 String token=httpServletRequest.getParameterMap().get("token")[0];
