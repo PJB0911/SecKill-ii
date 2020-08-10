@@ -59,6 +59,7 @@
   * [OpenResty—Shared dict缓存](#openrestyshared-dict缓存)
     * [Shared dict缓存效果](#shared-dict缓存效果)
   * [OpenResty—直接读取Redis缓存](#OpenResty—直接读取Redis缓存)
+  * [缓存雪崩、缓存穿透、缓存更新](#缓存雪崩、缓存穿透、缓存更新)
   * [小结](#小结-3)
   * [下一步优化方向](#下一步优化方向-3)
 * [查询优化之页面静态化](#查询优化之页面静态化)
@@ -1048,11 +1049,58 @@ Nginx的本地Shared dict内存缓存受制于**缓存容量**和**缓存更新*
 
 本项目只有1台Redis服务器。
 
+1. 在lua文件夹下，新建一个`itemshareddict.lua`脚本。
+
+```lua
+local args = ngx.req.get_uri_args()
+local id = args["id"]
+local redis = require "resty.redis"
+local cache = redis:new()
+local ok,err = cache:connect(redis slave ip,6379)
+local item_model = cache:get("item_"..id)
+if item_model == ngx.null or item_model == nil then
+    --如果取不到，就请求后端接口
+    local resp = ngx.location.capture("/item/get?id="..id)
+    --将后端返回的json响应，因为是只读redis slave 负责读，不需要存到缓存
+    item_model = resp.body
+end
+
+ngx.say(item_model)
+```
+
+2. 新建一个`itemredis/get`的location。
+
+```text
+location /itemredis/get{
+    default_type "application/json";
+    content_by_lua_file ../lua/itemredis.lua;
+}
+```
 
 
 **参考资料：**
 - [Nginx+Lua+Redis 实现高性能缓存数据读取](https://segmentfault.com/p/1210000011625271/read)
 - [使用nginx+lua脚本读写redis缓存](https://my.oschina.net/u/1175305/blog/1799941)
+
+
+### 缓存雪崩、缓存穿透、缓存更新
+
+**问题1**：缓存穿透指的是对某个一定不存在的数据进行请求，该请求将会穿透缓存到达数据库。
+**解决方案**：1.对这些不存在的数据缓存一个空数据，对这类请求进行过滤。2.布隆过滤器
+
+**问题2**：缓存雪崩指的是由于数据没有被加载到缓存中，或者缓存数据在同一时间大面积失效（过期），又或者缓存服务器宕机，导致大量的请求都到达数据库。
+**解决方案**：
+- 为了防止缓存在同一时间大面积过期导致的缓存雪崩，可以通过观察用户行为，合理设置缓存过期时间来实现；
+- 为了防止缓存服务器宕机出现的缓存雪崩，可以使用分布式缓存，分布式缓存中每一个节点只缓存部分的数据，当某个节点宕机时可以保证其它节点的缓存仍然可用。
+- **缓存预热**，避免在系统刚启动不久由于还未将大量数据进行缓存而导致缓存雪崩。
+例如：首先针对不同的缓存设置不同的过期时间，比如session缓存，在userKey这个前缀中，设置是30分钟过期，并且每次用户响应的话更新缓存时间。这样每次取session,都会延长30分钟，相对来说，就减少了缓存过期的几率
+
+**问题3**：缓存一致性要求数据更新的同时缓存数据也能够实时更新。
+**解决方案**：需要更新数据时，先更新数据库，然后把缓存里对应的数据删除。具体见参考资料↓。
+
+**参考资料：**
+- [缓存雪崩、缓存穿透、缓存更新了解多少](https://segmentfault.com/a/1190000017882763)
+- [高性能网站设计之缓存更新的套路](https://blog.csdn.net/tTU1EvLDeLFq5btqiK/article/details/78693323)
 
 
 ### 小结
