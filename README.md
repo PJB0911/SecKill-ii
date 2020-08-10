@@ -668,12 +668,12 @@ if(userModel==null){
 
 多级缓存有两层含义，一个是**缓存**，一个是**多级**。内存的速度是磁盘的成百上千倍，高并发下，从磁盘I/O十分影响性能。所谓缓存，就是将磁盘中的热点数据，暂时存到内存里面，以后查询直接从内存中读取，减少磁盘I/O，提高速度。所谓多级，就是在多个层次设置缓存，一个层次没有就去另一个层次查询。
 
-从缓存实现性能优化角度，用户的请求首先经过**CDN优化**，然后经过**Nginx服务器缓存**，再进入**商品页面级缓存**，然后经过**对象级缓存**，最后可能经过**数据库缓存**。前面的层层缓存使得用户请求读写数据库的压力大大减小。
+从缓存实现性能优化角度，用户的请求首先经过**CDN优化**，然后经过**Nginx服务器缓存**，再进入**本地缓存**，最后经过**Redis缓存**。前面的层层缓存使得用户请求读写数据库的压力大大减小。
 
 
 ### 项目架构
 
-![](https://github.com/PJB0911/SecKill-ii/blob/master/images/frame4.png)
+![](https://github.com/PJB0911/SecKill-ii/blob/master/images/frame5.png)
 
 ### 优化商品查询接口—Redis缓存
 
@@ -842,17 +842,23 @@ public CommonReturnType getItem(@RequestParam(name = "id")Integer id){
 
 ### 缓存优化后的效果
 
-- 之前进行分布式扩展后，发送1000*20个请求，TPS在**1700**左右，平均响应时间**350**毫秒左右。
-- 引入Redis缓存后，TPS峰值达到了**2100**左右，平均响应时间**250**毫秒左右，Redis服务器压力不大，还可以继续加并发量。
-- 引入本地缓存后，发现提升**十分巨大**，TPS峰值高达**3600**多，平均响应时间只有**50**毫秒左右。
-
-再次压测1000*40个请求，发现TPS峰值高达**4100**多，平均响应时间在**145**毫秒左右。Redis服务器压力更小了，因为都被本地缓存拦截了。
+- **分布式扩展**，发送**1000*20**个请求，TPS在**1700**左右，平均响应时间**350**毫秒左右。
+- 引入**Redis缓存**后，TPS峰值达到了**2100**左右，平均响应时间**250**毫秒左右，Redis服务器压力不大，还可以继续加并发量。
+- 引入**本地缓存**后，TPS峰值高达**3600**多，平均响应时间只有**50**毫秒左右。
+- 再次压测**1000*40**个请求，发现TPS峰值高达**4100**多，平均响应时间在**145**毫秒左右。Redis服务器压力减小，请求被本地缓存拦截。
 
 ### Nginx Proxy Cache缓存
 
-通过Redis缓存，避免了MySQL大量的重复查询，提高了部分效率；通过本地缓存，减少了与Redis服务器的网络I/O，提高了大量效率。但实际上，前端（客户端）请求Nginx服务器，Nginx有分发过程，需要去请求后面的两台应用服务器，有一定网络I/O，能不能直接把**热点数据存放到Nginx服务器上**呢？答案是可以的。
+通过Redis缓存，避免了MySQL大量的重复查询，提高了部分效率；通过本地缓存，减少了与Redis服务器的网络I/O，提高了大量效率。
+
+前端（客户端）请求Nginx服务器，Nginx有分发过程，需要去请求后面的3台应用服务器，存在一定网络I/O，所以需要引入Nginx缓存，直接把**热点数据存放到Nginx服务器上**。
 
 Nginx Proxy Cache的原理是基于**文件系统**的，它把后端返回的响应内容，作为**文件**存放在Nginx指定目录下。
+
+**参考资料：**
+- [nginx 反向代理之 proxy_cache](https://www.cnblogs.com/yyxianren/p/10832172.html)
+- [nginx proxy_cache 缓存配置](https://blog.csdn.net/dengjiexian123/article/details/53386586)
+- [](https://mp.weixin.qq.com/s?__biz=MzU5NzgwNDIyNQ==&mid=2247483758&idx=1&sn=fcd46827f22a6276e505a6e6dc5ace32&chksm=fe4c94c0c93b1dd64ea0471121febe9cabab49882f0f9ebf67049b2d4e051ccb6f604bf144c4&token=1811637810&lang=zh_CN#rd)
 
 在`nginx.conf`里面配置`proxy cache`：
 
@@ -860,6 +866,7 @@ Nginx Proxy Cache的原理是基于**文件系统**的，它把后端返回的�
 upstream backend_server{
     server miaoshaApp1_ip weight=1;
     server miaoshaApp2_ip weight=1;
+	server miaoshaApp3_ip weight=1;
 }
 #申明一个cache缓存节点 evels 表示以二级目录存放
     proxy_cache_path /usr/local/openresty/nginx/tmp_cache levels=1:2 keys_zone=tmp_cache:100m inactive=7d max_size=10g;
@@ -876,15 +883,15 @@ server{
 }
 ```
 
-这样，当多次访问后端商品详情接口时，在`nginx/tmp_cache/dir1/dir2`下生成了一个**文件**。`cat`这个文件，发现就是JSON格式的数据。
+当多次访问后端商品详情接口时，在`nginx/tmp_cache/dir1/dir2`下生成了一个**文件**。`cat`该文件，内容是后端服务器返回的`JSON`格式的数据。
 
 #### Nginx Proxy Cache缓存效果
 
-发现TPS峰值只有**2800**左右，平均响应时间**225**毫秒左右，**不升反降**，这是为什么呢？原因就是，虽然用户可以直接从Nginx服务器拿到缓存的数据，但是这些数据是基于**文件系统**的，是存放在**磁盘**上的，有**磁盘I/O**，虽然减少了一定的网络I/O，但是磁盘I/O并没有内存快，得不偿失，所以不建议使用。
+TPS峰值**2800**左右，平均响应时间**225**毫秒左右，**不升反降**。原因：虽然客户端可以直接从Nginx服务器拿到缓存的数据，但是这些数据是基于**文件系统**的，是存放在**磁盘**上的，有**磁盘I/O**，虽然减少了一定的网络I/O，但是磁盘I/O并没有内存快，得不偿失，所以在**本项目中不建议使用**。
 
-## Nginx lua脚本
+### Nginx lua脚本
 
-那Nginx有没有一种基于“内存”的缓存策略呢？答案也是有的，可以使用Nginx lua脚本来做缓存。
+排除Nginx Proxy Cache文件缓存,使用Nginx lua脚本做**内存缓存**。
 
 lua也是基于协程机制的。
 
@@ -902,9 +909,7 @@ lua脚本可以挂载在Nginx处理请求的起始、worker进程启动、内容
 ngx.log(ngx.ERR, "init lua success");
 ```
 
-在`nginx.conf`里面添加一个`init_by_lua_file`的字段，指定上述lua脚本的位置。这样，当Nginx启动的时候，就会执行这个lua脚本，输出"init lua success"。
-
-------
+在`nginx.conf`里面添加一个`init_by_lua_file   ../lua/init.lua;`的字段，指定上述lua脚本的位置。这样，当Nginx启动的时候，就会执行这个lua脚本，输出"init lua success"。
 
 当然，在Nginx启动的时候，挂载lua脚本并没有什么作用。一般在内容输出阶段，挂载lua脚本。
 
@@ -918,8 +923,6 @@ location /staticitem/get{
 ```
 
 访问`/staticitem/get`，在页面就会响应出`staticitem.lua`的内容。
-
-------
 
 新建一个`helloworld.lua`，使用`ngx.exec("/item/get?id=1")`访问某个URL。同样在`nginx.conf`里面添加一个`helloworld`location。这样，当访问`/helloworld`的时候就会跳转到`item/get?id=1`这个URL上。
 
