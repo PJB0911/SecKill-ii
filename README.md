@@ -12,6 +12,7 @@
   * [项目结构—DAO/Service/Controller结构](#项目结构daoservicecontroller结构)
   * [全局异常处理类](#全局异常处理类)
 * [项目云端部署](#项目云端部署)
+  * [服务器配置](#服务器配置)
   * [数据库部署](#数据库部署)
   * [项目打包](#项目打包)
   * [deploy启动脚本](#deploy启动脚本)
@@ -45,7 +46,7 @@
 * [查询优化之多级缓存](#查询优化之多级缓存)
   * [项目架构](#项目架构-2)
   * [优化商品查询接口—单机版Redis缓存](#优化商品查询接口单机版redis缓存)
-    * [序列化格式问题](#序列化格式问题)
+    * [缓存序列化格式问题](#缓存序列化格式问题)
     * [时间序列化格式问题](#时间序列化格式问题)
   * [优化商品查询接口—本地热点缓存](#优化商品查询接口本地热点缓存)
     * [本地缓存缺点](#本地缓存缺点)
@@ -153,6 +154,7 @@ IntelliJ IDEA 2019.3.3 x64
 - 秒杀时大量用户会在同一时间同时进行抢购，网站瞬时访问流量激增。
 - 秒杀一般是访问请求数量远远大于库存数量，只有少部分用户能够秒杀成功。
 - 秒杀业务流程比较简单，一般就是下订单减库存。
+- 秒杀商品，一般是定时上架，低廉价格，大幅推广。
 
 ### 秒杀架构设计理念
 
@@ -246,6 +248,8 @@ spring.resources.add-mappings=false
 ------
 
 ## 项目云端部署
+
+### 服务器配置
 
 **阿里云ECS服务器**
 - 1台用于mysql/redis/RocketMQ服务器（2核4G）
@@ -414,7 +418,7 @@ public class WebServerConfiguration implements WebServerFactoryCustomizer<Config
 
 ### Nginx部署前端静态资源
 
-负载均衡：将请求分摊到多个服务器上进行执行，保证所有后端服务器都将性能充分发挥，从而保持服务器集群的整体性能最优。
+**负载均衡**：将请求分摊到多个服务器上进行执行，保证所有后端服务器都将性能充分发挥，从而保持服务器集群的整体性能最优。
 
 购买域名，将Nginx服务器的ip和域名miaoshaserver绑定
 
@@ -495,7 +499,7 @@ server{
 
 - **单机环境**下，发送1000*30个请求，TPS在**1400**左右，平均响应时间**460**毫秒。CPU的`us`高达8.0，`loadaverage`三个指标加起来接近于2了（CPU核数）。
 - **分布式**扩展后，TPS在**1700**左右，平均响应时间**440**毫秒。但是CPU的`us`只有2.5左右，`loadaverage`1分钟在0.5左右，服务器的压力小了很多，有更多的并发提升空间。
-- **后端长连接后**，虽然TPS也是1700多，但是响应时间降低到了**350**毫秒。
+- **后端长连接**后，虽然TPS也是1700多，但是响应时间降低到了**350**毫秒。
 
 通过`netstat -an | grep miaoshaApp1_ip`可以查看Nginx服务器与后端服务器的连接情况，没开启长连接时，每次连接端口都在变，开启后，端口维持不变。
 
@@ -515,11 +519,11 @@ server{
 
 ![](https://github.com/PJB0911/SecKill-ii/blob/master/images/ngxin2.jpg)
 
-**Ngxin进程结构**
+- **Ngxin进程结构**
 
 ![](https://github.com/PJB0911/SecKill-ii/blob/master/images/nginx.png)
 
-**Master-worker高效原理**
+- **Master-worker高效原理**
 
 客户端的请求，并不会被`master`进程处理，而是交给下面的`worker`进程来处理，多个`worker`进程通过“**抢占**”的方式，取得处理权。如果某个`worker`挂了，`master`会立刻感知到，用一个新的`worker`代替。这就是Nginx高效率的原因之一，也是可以平滑重启的原理。
 
@@ -550,7 +554,7 @@ Nginx引入了一种比线程更小的概念，那就是“**协程**”。协�
 
 ### 基于Cookie传输SessionId
 
-用户第一次登录成功后，服务器会产生一个cookie,cookie中的value为Tomcat生成的`SessionId`，向Redis服务器中设置键，该键的key为cookie的value（即sessionId），值为**UserModel序列化的字符串**（`UserModel`类实现`Serializable`接口），并为该键设置过期时间（30分钟），从而实现分布式会话。
+用户第一次登录成功后，服务器会产生一个 `cookie` ,设置`cookie`中的value为Tomcat生成的`SessionId`，向Redis服务器中储存键值对，key为`cookie`的value（即sessionId），值为**UserModel序列化的字符串**（`UserModel`类实现`Serializable`接口），并为该键设置过期时间（30分钟），从而实现分布式会话。
 
 1. 引入两个`jar`包，分别是`spring-boot-starter-data-redis`和`spring-session-data-redis`，某些情况下，可能还需要引入`spring-security-web`。
 
@@ -577,8 +581,10 @@ this.httpServletRequest.getSession().setAttribute("LOGIN_USER",userModel);
 
 Spring Boot在Redis存入的`SessionId`有多项，不够简洁。一般常用UUID生成类似`SessionId`的唯一登录凭证`token`，然后将生成的`token`作为 key，`UserModel`作为VALUE存入到Redis服务器。
 
-在用户登录成功之后，将用户信息存储在Redis中，然后生成一个Token返回给客户端，这个Token为存储在Redis中的用户信息的key，这样，当客户端第二次访问服务端时会携带Token，首先到Redis中获取查询该token对应的用户使用是否存在，避免数据库查询用户次数，从而减轻数据库的访问压力。
+在用户登录成功之后，将用户信息存储在Redis中，然后生成一个Token返回给客户端，这个Token为存储在Redis中的用户信息的key，这样，当客户端第二次
 
+访问服务端时会携带Token，首先到Redis中获取查询该token对应的用户使用是否存在，避免数据库查询用户次数，从而减轻数据库的访问压力。
+    
 1. 登录时生成 Token
 
 ```java
@@ -654,23 +660,26 @@ if(userModel==null){
 
 ### 下一步优化方向
 
-目前服务器的性能瓶颈在于数据库的大量读取操作，接下来会引入**缓存**，优化查询。
+目前服务器的性能瓶颈在于数据库的大量读取操作，所以主要利用各种技术减少对数据库层面的访问，接下来会引入**缓存**，优化查询。
 
 ------
 
 ## 查询优化之多级缓存
 
-多级缓存有两层含义，一个是**缓存**，一个是**多级**。我们知道，内存的速度是磁盘的成百上千倍，高并发下，从磁盘I/O十分影响性能。所谓缓存，就是将磁盘中的热点数据，暂时存到内存里面，以后查询直接从内存中读取，减少磁盘I/O，提高速度。所谓多级，就是在多个层次设置缓存，一个层次没有就去另一个层次查询。
+多级缓存有两层含义，一个是**缓存**，一个是**多级**。内存的速度是磁盘的成百上千倍，高并发下，从磁盘I/O十分影响性能。所谓缓存，就是将磁盘中的热点数据，暂时存到内存里面，以后查询直接从内存中读取，减少磁盘I/O，提高速度。所谓多级，就是在多个层次设置缓存，一个层次没有就去另一个层次查询。
+
+从缓存实现性能优化角度，用户的请求首先经过**CDN优化**，然后经过**Nginx服务器缓存**，再进入**商品页面级缓存**，然后经过**对象级缓存**，最后可能经过**数据库缓存**。前面的层层缓存使得用户请求读写数据库的压力大大减小。
+
 
 ### 项目架构
 
-![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/frame4.png)
+![](https://github.com/PJB0911/SecKill-ii/blob/master/images/frame4.png)
 
-### 优化商品查询接口—单机版Redis缓存
+### 优化商品查询接口—Redis缓存
 
-之前的`ItemController.getItem`接口，来一个`Id`，就调用`ItemService`去数据库查询一次。`ItemService`会查三张表，分别是商品信息表`item`表、商品库存`stock`表和活动信息表`promo`，十分影响性能。
+在商品查询接口`ItemController.getItem`中，客户端请求查询`ItemId`，就调用`ItemService`去数据库查询一次。`ItemService`会查三张表，分别是商品信息表`item`表、商品库存`stock`表和秒杀活动表`promo`，十分影响性能。
 
-所以修改`ItemController.getItem`接口，思路很简单，先从Redis服务器获取，若没有，则从数据库查询并存到Redis服务。有的话直接用。
+所以将从数据库查询到的的数据存入Redis中，这样每次请求先进行**缓存查询**，如果命中则直接从Redis服务器中获取返回;如果没有，则从数据库查询并存到Redis服务器。
 
 ```java
 @RequestMapping(value = "/get",method = {RequestMethod.GET})
@@ -690,11 +699,11 @@ public CommonReturnType getItem(@RequestParam(name = "id")Integer id){
 }
 ```
 
-#### 序列化格式问题
+#### 缓存序列化格式问题
 
-采用上述方式，存到Redis里面的VALUE是类似`/x05/x32`的二进制格式，我们需要自定义`RedisTemplate`的序列化格式。
+采用上述方式，存到Redis的VALUE是类似`/x05/x32`的二进制格式，需要自定义`RedisTemplate`的序列化格式。
 
-之前我们在`config`包下面创建了一个`RedisConfig`类，里面没有任何方法，接下来我们编写一个方法。
+在`config.RedisConfig`中自定义格式化方法。
 
 ```java
 @Bean
@@ -718,7 +727,7 @@ public RedisTemplate redisTemplate(RedisConnectionFactory redisConnectionFactory
 
 #### 时间序列化格式问题
 
-但是这样对于日期而言，序列化后是一个很长的毫秒数。我们希望是`yyyy-MM-dd HH:mm:ss`的格式，还需要进一步处理。新建`serializer`包，里面新建两个类。
+对于日期而言，序列化后是长度较长的毫秒数。用户希望的是`yyyy-MM-dd HH:mm:ss`的格式，需要进一步处理。新建`serializer`包，里面新建两个类。
 
 ```java
 public class JodaDateTimeJSONSerializer extends JsonSerializer<DateTime> {
@@ -740,7 +749,7 @@ public class JodaDateTimeDeserializer extends JsonDeserializer<DateTime> {
 }
 ```
 
-回到`RedisConfig`类里面：
+回到`RedisConfig`类：
 
 ```java
 public RedisTemplate redisTemplate(RedisConnectionFactory redisConnectionFactory){
@@ -762,13 +771,13 @@ public RedisTemplate redisTemplate(RedisConnectionFactory redisConnectionFactory
 
 ### 优化商品查询接口—本地热点缓存
 
-Redis缓存虽好，但是有网络I/O，没有本地缓存快。我们可以在Redis的前面再添加一层“**本地热点**”缓存。所谓**本地**，就是利用**本地JVM的内存**。所谓**热点**，由于JVM内存有限，仅存放**多次查询**的数据。
+Redis缓存虽好，但是分布式系统中有网络I/O，没有本地缓存快。可以在Redis缓存之前再添加一层“**本地热点**”缓存。所谓**本地**，就是利用**本地JVM的内存**。所谓**热点**，由于JVM内存有限，仅存放**多次查询**的数据。
 
-本地缓存，说白了就是一个`HashMap`，但是`HashMap`不支持并发读写，肯定是不行的。`j.u.c`包里面的`ConcurrentHashMap`虽然也能用，但是无法高效处理过期时限、没有淘汰机制等问题，所以这里使用了`Google`的`Guava Cache`方案。
+本地缓存，是`HashMap`结构，但是`HashMap`不支持并发读写，肯定是不行的。`j.u.c`包里面的`ConcurrentHashMap`虽然也能用，但是无法高效处理过期时限、没有淘汰机制等问题，所以这里使用了`Google`的`Guava Cache`方案。
 
 `Guava Cache`除了线程安全外，还可以控制超时时间，提供淘汰机制。
 
-引用`google.guava`包后，在`service`包下新建一个`CacheService`类。
+1. 引用`google.guava`包后，在`service`包下新建一个`CacheService`类。
 
 ```java
 @Service
@@ -798,7 +807,7 @@ public class CacheServiceImpl implements CacheService {
 }
 ```
 
-在`ItemController`里面，首先从本地缓存中获取，如果本地缓存没有，就去Redis里面获取，如果Redis也没有，就去数据库查询并存放到Redis里面。如果Redis里面有，将其获取后存到本地缓存里面。
+2. 在`ItemController`中，首先从本地缓存中获取，如果本地缓存没有，就去Redis缓存获取，如果Redis也没有，就去数据库查询并存放到Redis缓存。如果Redis里面有，将其获取后存到本地缓存里面。
 
 ```java
 public CommonReturnType getItem(@RequestParam(name = "id")Integer id){
@@ -828,7 +837,7 @@ public CommonReturnType getItem(@RequestParam(name = "id")Integer id){
 
 本地缓存虽快，但是也有缺点：
 
-1. 更新麻烦，容易产生脏缓存。
+1. 更新麻烦，容易产生脏缓存，需要设置较短的有效期。
 2. 受到JVM容量的限制。
 
 ### 缓存优化后的效果
