@@ -558,20 +558,20 @@ Nginx引入了一种比线程更小的概念，那就是“**协程**”。协�
 
 3. 在`application.properties`里面添加Redis相关连接配置。
 
-	```properties
-	spring.redis.host=RedisServerIp
-	spring.redis.port=6379
-	spring.redis.database=10
-	spring.redis.password=
-	```
+```properties
+spring.redis.host=RedisServerIp
+spring.redis.port=6379
+spring.redis.database=10
+spring.redis.password=
+```
 
 
 这样，之前的代码，就会自动将SessionId保存到Redis服务器上。
 
-	```java
-	this.httpServletRequest.getSession().setAttribute("IS_LOGIN",true);
-	this.httpServletRequest.getSession().setAttribute("LOGIN_USER",userModel);
-	```
+```java
+this.httpServletRequest.getSession().setAttribute("IS_LOGIN",true);
+this.httpServletRequest.getSession().setAttribute("LOGIN_USER",userModel);
+```
 
 ### 基于Token传输
 
@@ -581,69 +581,69 @@ Spring Boot在Redis存入的`SessionId`有多项，不够简洁。一般常用UU
 
 1. 登录时生成 Token
 
-	```java
-	String uuidToken=UUID.randomUUID().toString();
-	uuidToken=uuidToken.replace("-","");
-	//建立Token与用户登录态的联系
-	redisTemplate.opsForValue().set(uuidToken,userModel);
-	//设置超时时间
-	redisTemplate.expire(uuidToken,1, TimeUnit.HOURS);
-	return CommonReturnType.create(uuidToken);
+```java
+String uuidToken=UUID.randomUUID().toString();
+uuidToken=uuidToken.replace("-","");
+//建立Token与用户登录态的联系
+redisTemplate.opsForValue().set(uuidToken,userModel);
+//设置超时时间
+redisTemplate.expire(uuidToken,1, TimeUnit.HOURS);
+return CommonReturnType.create(uuidToken);
 ```
 
 2. 将生成的`token`返回给前端，前端在登录成功之后，将`token`**存放到`localStorage`里面**。
 
-	```javascript
-	if (data.status == "success") {
-	    alter("登录成功");
-	    var token = data.data;
-	    window.localStorage["token"] = token;
-	    window.location.href = "listitem.html";
-	}
+```javascript
+if (data.status == "success") {
+    alter("登录成功");
+    var token = data.data;
+    window.localStorage["token"] = token;
+    window.location.href = "listitem.html";
+}
 ```
 
 3. 前端的下单操作，需要验证登录状态。
 
-	```javascript
-	var token = window.localStorage["token"];
-	if (token == null) {
-	    alter("没有登录，不能下单");
-	    window.location.href = "login.html";
-	    return false;
-	}
-	```
+```javascript
+var token = window.localStorage["token"];
+if (token == null) {
+    alter("没有登录，不能下单");
+    window.location.href = "login.html";
+    return false;
+}
+```
 
 4. 在请求后端下单接口的时候，需要把这个`token`带上。
-	
-	```javascript
-	$.ajax({
-	    type: "POST",
-	    url: "http://" + g_host + "/order/createorder?token=" + token,
-	    ···
-	});
-	```
+
+```javascript
+$.ajax({
+    type: "POST",
+    url: "http://" + g_host + "/order/createorder?token=" + token,
+    ···
+});
+```
 
 基础项目是使用`SessionId`来获取登录状态的。
 
-	```java
-	Boolean isLogin=(Boolean)httpServletRequest.getSession().getAttribute("IS_LOGIN");
-	if(isLogin==null||!isLogin.booleanValue())
-	    throw new BizException(EmBizError.USER_NOT_LOGIN,"用户还未登录，不能下单");
-	UserModel userModel = (UserModel)httpServletRequest.getSession().getAttribute("LOGIN_USER");
-	```
+```java
+Boolean isLogin=(Boolean)httpServletRequest.getSession().getAttribute("IS_LOGIN");
+if(isLogin==null||!isLogin.booleanValue())
+    throw new BizException(EmBizError.USER_NOT_LOGIN,"用户还未登录，不能下单");
+UserModel userModel = (UserModel)httpServletRequest.getSession().getAttribute("LOGIN_USER");
+```
 
 分布式会话利用前端携带的`Token`，从Redis服务器里面获取这个`Token`对应的`UserModel`对象。
 
-	```java
-	String token=httpServletRequest.getParameterMap().get("token")[0];
-	if(StringUtils.isEmpty(token)){
-	    throw new BizException(EmBizError.USER_NOT_LOGIN,"用户还未登录，不能下单");
-	}
-	UserModel userModel= (UserModel) redisTemplate.opsForValue().get(token);
-	if(userModel==null){
-	    throw new BizException(EmBizError.USER_NOT_LOGIN,"登录过期，请重新登录");
-	}
-	```
+```java
+String token=httpServletRequest.getParameterMap().get("token")[0];
+if(StringUtils.isEmpty(token)){
+    throw new BizException(EmBizError.USER_NOT_LOGIN,"用户还未登录，不能下单");
+}
+UserModel userModel= (UserModel) redisTemplate.opsForValue().get(token);
+if(userModel==null){
+    throw new BizException(EmBizError.USER_NOT_LOGIN,"登录过期，请重新登录");
+}
+```
 
 ### 小结
 
