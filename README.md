@@ -166,7 +166,7 @@ IntelliJ IDEA 2019.3.3 x64
 - **削峰**：对于秒杀系统瞬时会有大量用户涌入，所以在抢购一开始会有很高的瞬间峰值。高峰值流量是压垮系统很重要的原因，所以如何把瞬间的高流量变成一段时间平稳的流量也是设计秒杀系统很重要的思路。实现削峰的常用的方法有利用缓存和消息中间件等技术。
 - **异步处理**：秒杀系统是一个高并发系统，采用异步处理模式可以极大地提高系统并发量，其实异步处理就是削峰的一种实现方式。
 - **内存缓存**：秒杀系统最大的瓶颈一般都是数据库读写，由于数据库读写属于磁盘IO，性能很低，如果能够把部分数据或业务逻辑转移到内存缓存，效率会有极大地提升。
-- **水平拓展**：当然如果我们想支持更多用户，更大的并发，最好就将系统设计成弹性可拓展的。拓展机器,像淘宝、京东等双十一活动时会增加大量机器应对交易高峰。
+- **水平拓展**：当然如果想支持更多用户，更大的并发，最好就将系统设计成弹性可拓展的。拓展机器,像淘宝、京东等双十一活动时会增加大量机器应对交易高峰。
 - **数据一致性**：
 
 ### 需要解决的问题：
@@ -384,7 +384,7 @@ nohup java -Xms400m -Xmx400m -XX:NewSize=200m -XX:MaxNewSize=200m -jar miaosha.j
 public class WebServerConfiguration implements WebServerFactoryCustomizer<ConfigurableWebServerFactory> {
     @Override
     public void customize(ConfigurableWebServerFactory factory) {
-        //使用对应工厂类提供给我们的接口，定制化Tomcat connector
+        //使用对应工厂类提供的接口，定制化Tomcat connector
         ((TomcatServletWebServerFactory) factory).addConnectorCustomizers(new TomcatConnectorCustomizer() {
             @Override
             public void customize(Connector connector) {
@@ -411,7 +411,7 @@ public class WebServerConfiguration implements WebServerFactoryCustomizer<Config
 
 ### 小结
 
-这一节我们通过`pstree -p pid | wc -l`和`top -H`指令，配合`jmeter`压测工具：
+这一节通过`pstree -p pid | wc -l`和`top -H`指令，配合`jmeter`压测工具：
 
 1. 发现了Spring Boot内嵌Tomcat的**线程容量问题**。通过在Spring Boot配置文件中添加配置项，提高了Tomcat的等待队列长度、最大工作线程、最小工作线程，榨干服务器性能。
 2. Spring Boot内嵌Tomcat默认使用`HTTP 1.0`的**短连接**，由于Spring Boot并没有把所有Tomcat配置都暴露出来，所以需要编写一个配置类使用`HTTP 1.1`的**长连接**。
@@ -985,7 +985,7 @@ OpenResty对Nginx进行了扩展，添加了很多功能，比如集成了lua开
 
 Shared dict,共享内存字典,Key-Value**内存**结构，对所有`worker`进程可见，并且可以指定LRU淘汰规则。
 
-1. 和配置`proxy cache`一样，我们需要指定一个名为`my_cache`，大小为128m的`lua_shared_dict`：
+1. 和配置`proxy cache`一样，需要指定一个名为`my_cache`，大小为128m的`lua_shared_dict`：
 
 ```text
 upstream backend_server
@@ -1066,7 +1066,7 @@ location /luaitem/get{
 
 Nginx的本地Shared dict内存缓存受制于**缓存容量**和**缓存更新**问题，OpenResty提供了可直接从Redis服务器中读取缓存的支持，可以解决**缓存脏数据**和**缓存容量**的问题。
 
-平常我们使用缓存都是在后端的服务器中进行判断，是否去查询redis中的数据。在企业中一般采用Redis集群实现读写分离，redis master负责写主服务，redis slave服务器只负责读从服务。Nginx通过lua脚本直接从redis slave服务器中获取数据，减少对后端的tomcat中的请求。
+平常使用缓存都是在后端的服务器中进行判断，是否去查询redis中的数据。在企业中一般采用Redis集群实现读写分离，redis master负责写主服务，redis slave服务器只负责读从服务。Nginx通过lua脚本直接从redis slave服务器中获取数据，减少对后端的tomcat中的请求。
 
 本项目只有1台Redis服务器,所以Nginx直接从redis服务器获取缓存。
 
@@ -1254,7 +1254,7 @@ CDN服务器，既充当了浏览器的服务端，又充当了Nginx的客户端
 3. html文件设置较长的max-age,每次启动html文件时，依靠动态获取**版本号**请求（AJAX请求头）发送到后端，后端判断前端传来的版本号是不是最新，异步下载最新版本号的html文件后渲染在前端。
 
 **策略三**
-1. 对于动态请求，如果即使做了多级缓存，仍然有压力，那么我们可以考虑把动态请求静态化json资源（.json文件）推送到CDN，添加版本号，客户端每次可以先展示CDN缓存的json同时异步AJAX请求后端判断版本号。
+1. 对于动态请求，如果即使做了多级缓存，仍然有压力，那么可以考虑把动态请求静态化json资源（.json文件）推送到CDN，添加版本号，客户端每次可以先展示CDN缓存的json同时异步AJAX请求后端判断版本号。
 2. 商品出现违规信息，需要紧急下架，依靠**异步AJAX请求**后端获取对应资源状态，如果资源状态是紧急下架，更新CDN对应资源。
 3. 通过跑批紧急推送CDN内容以使其下架等操作。
 
@@ -1378,8 +1378,6 @@ page.open("http://miaoshaserver/resources/getitem.html?id=1",function(status){
 
 
 ### 小结
-
-这一章我们
 
 1. 首先使用**CDN技术**将静态资源部署到CDN服务器上，提高了静态资源的响应速度。
 2. 使用**全页面静态化技术**，使得用户在请求页面的时候，不会每次都去请求后端接口，然后进行页面渲染，而是直接得到一个已经渲染好的HTML页面，提高了响应速度。
@@ -1525,7 +1523,7 @@ public void publishPromo(Integer promoId) {
 }
 ```
 
-当我们把**库存存到Redis的时候**，**商品可能被下单**，这样数据库的库存和Redis的库存就**不一致**了。解决方法就是活动**未开始**的时候，商品是**下架状态**，不能被下单。
+当把**库存存到Redis的时候**，**商品可能被下单**，这样数据库的库存和Redis的库存就**不一致**了。解决方法就是活动**未开始**的时候，商品是**下架状态**，不能被下单。
 
 - 修改`ItemService`中的`decreaseStock`方法，在Redis里面扣减库存。
 
@@ -1665,10 +1663,10 @@ public boolean decreaseStock(Integer itemId, Integer amount) {
 
 ### 小结
 
-这一章我们
+这一章
 
 1. 首先对**交易验证**进行了优化，把对用户、商品、活动的查询从数据库转移到了缓存中，优化效果明显。
-2. 我们优化了减库存的逻辑，一是添加了索引，从锁表变成了锁行；二是将减库存的操作也移到了缓存中，先从缓存中扣，再从数据库扣。这就涉及到了**异步减库存**，所以引入**消息中间件**。
+2. 优化了减库存的逻辑，一是添加了索引，从锁表变成了锁行；二是将减库存的操作也移到了缓存中，先从缓存中扣，再从数据库扣。这就涉及到了**异步减库存**，所以引入**消息中间件**。
 
 ### 下一步优化方向
 
@@ -1736,11 +1734,11 @@ boolean mqResult=itemService.asyncDecreaseStock(itemId,amount);
 
 ### 事务提交问题
 
-但是这么做，依然有问题。Spring的`@Transactional`标签，会在**事务方法返回后才提交**，如果提交的过程中，发生了异常，则数据库回滚，但是Redis库存已扣，还是无法保证一致性。我们需要在**事务提交成功后**，**再发送异步消息**。
+但是这么做，依然有问题。Spring的`@Transactional`标签，会在**事务方法返回后才提交**，如果提交的过程中，发生了异常，则数据库回滚，但是Redis库存已扣，还是无法保证一致性，要在**事务提交成功后**，**再发送异步消息**。
 
 #### 解决方法
 
-Spring给我们提供了`TransactionSynchronizationManager.registerSynchronization`方法，这个方法的传入一个`TransactionSynchronizationAdapter`的匿名类，通过`afterCommit`方法，在**事务提交成功后**，执行**发送消息操作**。
+Spring提供了`TransactionSynchronizationManager.registerSynchronization`方法，这个方法的传入一个`TransactionSynchronizationAdapter`的匿名类，通过`afterCommit`方法，在**事务提交成功后**，执行**发送消息操作**。
 
 ```java
 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
@@ -1819,17 +1817,15 @@ transactionMQProducer.setTransactionListener(new TransactionListener() {
 
 #### 更新下单流程
 
-之前的下单流程是：在`OrderController`里面调用了`OrderService.createOrder`方法，然后在该方法最后发送了异步消息，会导致异步消息丢失的问题。所以我们引入了**事务型消息**。
+之前的下单流程是：在`OrderController`里面调用了`OrderService.createOrder`方法，然后在该方法最后发送了异步消息，会导致异步消息丢失的问题。所以引入了**事务型消息**。
 
 现在的下单流程是：在`OrderController`里面直接调用`MqProducer.transactionAsyncReduceStock`方法，发送一个事务型消息，然后在**事务型消息中调用`OrderService.createOrder`方法**，进行下单。
 
 ### 小结
 
-这一章我们
-
-1. 首先解决了**发送异步消息时机**的问题，之前是在`ItemService.decreaseStock`，当在Redis里面扣减成功后，发送异步消息。这样会导致数据库回滚，但Redis无法回滚的问题。所以我们把发送异步消息提到所有下单操作完成之后。
-2. 其次，由于Spring的`@Transactional`标签是在方法返回后，才提交事务，如果返回阶段出了问题，那么数据库回滚了，但是缓存的库存却扣了。所以，我们使用了`afterCommit`方法。
-3. 最后，如果在执行`afterCommit`的时候，发生了异常，那么消息就发不出去，又会导致数据一致性问题。所以我们通过使用**事务型消息**，把**下单操作包装在异步扣减消息里面**，让下单操作跟扣减消息**同生共死**。
+1. 首先解决了**发送异步消息时机**的问题，之前是在`ItemService.decreaseStock`，当在Redis里面扣减成功后，发送异步消息。这样会导致数据库回滚，但Redis无法回滚的问题。所以把发送异步消息提到所有下单操作完成之后。
+2. 其次，由于Spring的`@Transactional`标签是在方法返回后，才提交事务，如果返回阶段出了问题，那么数据库回滚了，但是缓存的库存却扣了。所以使用了`afterCommit`方法。
+3. 最后，如果在执行`afterCommit`的时候，发生了异常，那么消息就发不出去，又会导致数据一致性问题。所以通过使用**事务型消息**，把**下单操作包装在异步扣减消息里面**，让下单操作跟扣减消息**同生共死**。
 
 ### 下一步优化方向
 
@@ -1854,7 +1850,7 @@ public String initStockLog(Integer itemId, Integer amount) {
 }
 ```
 
-2. 用户请求后端`OrderController.createOrder`接口，我们先初始化库存流水的状态，再调用事务型消息去下单。
+2. 用户请求后端`OrderController.createOrder`接口，先初始化库存流水的状态，再调用事务型消息去下单。
 
 ```java
 //OrderController
@@ -1995,11 +1991,16 @@ String stockLogId = itemService.initStockLog(itemId, amount);
 
 秒杀秒杀，就是在活动开始的一瞬间，有大量流量涌入，优化不当，会导致服务器停滞，甚至宕机。所以引入流量削峰技术十分有必要。
 
+**秒杀令牌原理**：
+- 秒杀接口需要依靠令牌才能进入。秒杀令牌由秒杀活动模块负责生成。
+- 秒杀活动模块对秒杀令牌生成全权处理，逻辑收口。
+- 秒杀下单前用户需要先获得令牌才能秒杀。
+
 ### 业务解耦—秒杀令牌
 
-之前的**验证逻辑**和**下单逻辑**都耦合在`OrderService.createOrder`里面，现在利用秒杀令牌，使校验逻辑和下单逻辑分离。
+之前**验证逻辑**和**下单逻辑**都耦合在`OrderService.createOrder`里面，现在利用秒杀令牌，使校验逻辑和下单逻辑分离。
 
-`PromoService`新开一个`generateSecondKillToken`，将活动、商品、用户信息校验逻辑封装在里面。
+1. `PromoService`新开一个`generateSecondKillToken`，将活动、商品、用户信息校验逻辑封装在里面。
 
 ```java
 public String generateSecondKillToken(Integer promoId,Integer itemId,Integer userId) {
@@ -2032,9 +2033,9 @@ public String generateSecondKillToken(Integer promoId,Integer itemId,Integer use
 }
 ```
 
-这样，`OrderService.createOrder`的校验逻辑就可以删掉了。
+这样，`OrderService.createOrder`的校验逻辑就可以删除，校验逻辑和下单逻辑分开。
 
-`OrderController`新开一个`generateToken`接口，以便前端请求，返回令牌。
+2. `OrderController`新开一个`generateToken`接口，以便前端请求，返回令牌。
 
 ```java
 @RequestMapping(value = "/generatetoken",···)
@@ -2051,7 +2052,7 @@ public CommonReturnType generateToken(···) throws BizException {
 
 ```
 
-前端在点击“**下单**”后，首先会请求`generateToken`接口，返回秒杀令牌。然后将秒杀令牌`promoToken`作为参数，再去请求后端`createOrder`接口：
+3. 前端在点击“**下单**”后，首先会请求`generateToken`接口，返回秒杀令牌。然后将秒杀令牌`promoToken`作为参数，再去请求后端`createOrder`接口：
 
 ```java
 @RequestMapping(value = "/createorder",···)
@@ -2074,7 +2075,15 @@ public CommonReturnType createOrder(··· @RequestParam(name = "promoToken", re
 
 ### 限流—令牌大闸
 
-大闸的意思就是**令牌的数量是有限的**，当令牌用完时，就不再发放令牌了，那么下单将无法进行。之前我们通过`PromoService.publishPromo`将库存发布到了Redis上，现在我们将令牌总量也发布到Redis上，这里我们设定令牌总量是库存的5倍。
+**秒杀大闸的原理**：
+- 依靠秒杀令牌的授权原理定制化发牌逻辑（控制令牌发放）。
+- 根据秒杀商品**初始库存**颁发对应数量的令牌，控制大闸流量。
+- 用户风控策略前置到秒杀令牌发放中。
+- 库存售罄判断前置到秒杀令牌发放中。
+
+大闸的意思就是**令牌的数量是有限的**，当令牌用完时，就不再发放令牌了，那么下单将无法进行。
+
+1. 通过`PromoService.publishPromo`将库存发布到了Redis上，现在将令牌总量也发布到Redis上，设定令牌总量是库存的5倍。
 
 ```java
 public void publishPromo(Integer promoId) {
@@ -2087,12 +2096,11 @@ public void publishPromo(Integer promoId) {
 
 ```
 
-接下来，在`PromoService.generateSecondKillToken`方法中，在生成令牌之前，首先将Redis里的令牌总量减1，然后再判断是否剩余，如果<0，直接返回null。
+2. ，在`PromoService.generateSecondKillToken`方法中，在生成令牌之前，首先将Redis里的令牌总量减1，然后再判断是否剩余，如果<0，直接返回null。
 
 ```java
 //获取大闸数量
-long result = redisTemplate.opsForValue().
-                increment("promo_door_count_" + promoId, -1);
+long result = redisTemplate.opsForValue().increment("promo_door_count_" + promoId, -1);
 if (result < 0) 
     return null;
 //令牌生成       
@@ -2107,7 +2115,7 @@ if (result < 0)
 
 ### 限流—队列泄洪
 
-队列泄洪，就是让多余的请求**排队等待**。**排队**有时候比**多线程**并发效率更高，多线程毕竟有锁的竞争、上下文的切换，很消耗性能。而排队是无锁的，单线程的，某些情况下效率更高。
+队列泄洪，就是让多余的请求**排队等待**，依靠排队来限制**并发流量**，依靠**排队**和下游**拥塞窗口**程度调整队列释放流量大小。**排队**有时候比**多线程**并发效率更高，多线程毕竟有锁的竞争、上下文的切换，很消耗性能。而排队是无锁的，单线程的，某些情况下效率更高。
 
 比如Redis就是**单线程模型**，多个用户同时执行`set`操作，只能一一等待。
 
@@ -2115,9 +2123,9 @@ if (result < 0)
 
 像支付宝就使用了队列泄洪，双11的时候，支付宝作为网络科技公司，可以承受很高的TPS，但是下游的各个银行，无法承受这么高的TPS。支付宝维护了一个“拥塞窗口”，慢慢地向下游银行发送流量，保护下游。
 
-那对于我们的项目，什么时候引入“队列泄洪”呢？在`OrderController`里面，之前拿到秒杀令牌后，就要开始执行下单的业务了。现在，我们把**下单业务**封装到一个**固定大小的线程池中**，一次**只处理固定大小的请求**。
+在`OrderController`里面，之前拿到秒杀令牌后，就要开始执行下单的业务了。现在把**下单业务**封装到一个**固定大小的线程池中**，一次**只处理固定大小的请求**。
 
-在`OrderController`里面引入`j.u.c.ExcutorService`，创建一个`init`方法，初始化线程池。
+1. 在`OrderController`里面引入`j.u.c.ExcutorService`，创建一个`init`方法，初始化线程池。
 
 ```java
 @PostConstruct
@@ -2128,7 +2136,7 @@ public void init() {
 
 ```
 
-在拿到秒杀令牌后，使用线程池来处理下单请求。
+2. 在拿到秒杀令牌后，使用线程池来处理下单请求。
 
 ```java
 Future<Object> future = executorService.submit(new Callable<Object>() {
@@ -2153,9 +2161,7 @@ future.get();
 
 ### 小结
 
-这一章我们
-
-1. 使用秒杀令牌，实现了校验业务和下单业务的分离。同时为秒杀大闸做了铺垫。
+1. 使用秒杀令牌，实现了校验业务和下单业务的分离，也限制流量，同时为秒杀大闸做了铺垫。
 2. 使用秒杀大闸，实现了限流的第一步，限制了流量的总量。
 3. 使用队列泄洪，实现了限流的第二步，同一时间只有部分请求得到处理。
 
@@ -2169,7 +2175,9 @@ future.get();
 
 之前的流程是，用户点击下单后，会直接拿到令牌然后执行下单流程。现在，用户点击下单后，前端会弹出一个“验证码”，用户输入之后，才能请求下单接口。
 
-`OrderController`新开一个`generateVerifyCode`接口。
+1. 生成验证码的[CodeUti](https://github.com/PJB0911/SecKill-ii/blob/master/src/main/java/com/gan/util/CodeUtil.java)
+
+2. `OrderController`新开一个`generateVerifyCode`接口。
 
 ```java
 @RequestMapping(value = "/generateverifycode",···)
@@ -2187,7 +2195,7 @@ public void generateVerifyCode(HttpServletResponse response) throws BizException
 
 ```
 
-之前获取秒杀令牌的`generateToken`接口，需要添加验证码校验逻辑。
+3. 获取秒杀令牌的`generateToken`接口，需要添加验证码校验逻辑。
 
 ```java
 public CommonReturnType generateToken(··· @RequestParam(name = "verifyCode") String verifyCode) throws BizException {
@@ -2219,13 +2227,13 @@ public CommonReturnType generateToken(··· @RequestParam(name = "verifyCode") 
 
 客户端请求接口，必须先从令牌桶中获取令牌，令牌是由一个“定时器”定期填充的。在一个时间内，令牌的数量是有限的。令牌桶的大小为100，那么TPS就为100。
 
-![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/tokenBucket.png)
+![](https://github.com/PJB0911/SecKill-ii/tree/master/images/tokenBucket.png)
 
 #### 漏桶
 
 客户端请求接口，会向漏桶里面“加水”。漏桶每秒漏出一定数量的“水”，也就是处理请求。只有当漏洞不满时，才能请求。
 
-![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/leekBucket.png)
+![](https://github.com/PJB0911/SecKill-ii/tree/master/images/leekBucket.png)
 
 #### 区别
 
@@ -2233,15 +2241,17 @@ public CommonReturnType generateToken(··· @RequestParam(name = "verifyCode") 
 
 ### 限流力度
 
-分为**接口维**度和**总维度**，很好理解。接口维度就是限制某个接口的流量，而总维度是限制所有接口的流量。
+分为**接口维**度和**总维度**，**接口维度**就是限制某个接口的流量，而**总维度**是限制所有接口的流量。
 
 ### 限流范围
 
-分为**集群限流**和**单机限流**，集群限流顾名思义就是限制整个集群的流量，需要用Redis或者其它中间件技术来做统一计数器，往往会产生性能瓶颈。单机限流在负载均衡的前提下效果更好。
+分为**集群限流**和**单机限流**，**集群限流**就是限制整个集群的流量，需要用Redis或者其它中间件技术来做统一计数器，往往会产生性能瓶颈。**单机限流**在负载均衡的前提下效果更好。
 
 ### RateLimiter限流实现
 
 `google.guava.RateLimiter`就是令牌桶算法的一个实现类，`OrderController`引入这个类，在`init`方法里面，初始令牌数量为200。
+-[Guava RateLimiter限流](https://www.jianshu.com/p/5d4fe4b2a726)
+-[限流与RateLimiter](https://www.cnblogs.com/xrq730/p/11025029.html)
 
 ```java
 @PostConstruct
@@ -2283,8 +2293,6 @@ if (!orderCreateRateLimiter.tryAcquire())
 2. **凭证系统**：根据设备指纹下发凭证，在关键业务链路上带上凭证并由凭证服务器验证。凭证服务器根据设备指纹参数和风控系统判定凭证的可疑程度。若凭证分数低于设定值，则开启验证。
 
 ### 小结
-
-这一节我们
 
 1. 通过引入验证码技术，在发送秒杀令牌之前，再做一层限流。
 2. 介绍了三种限流的方案，使用`RateLimiter`实现了令牌桶限流。
