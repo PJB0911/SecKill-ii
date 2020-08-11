@@ -1287,11 +1287,6 @@ jQuery(document).ready(function(){
 - **不改动任何服务端代码**，通过全页面静态化的手段，把已经渲染好的，布满数据的 html 页面，直接以 **html** 文件的形式部署到 CDN 上；
 - 全页面静态化的技术和网页爬虫非常的像，网页爬虫不知道引用的 js 文件或 css 文件，只知道最后爬出来的文件是一个可以在浏览器中渲染的文件；
 
-**参考资料：**
-- [基于 phantomjs 的全页面静态化技术原理](https://blog.csdn.net/weixin_33669968/article/details/105947547)
-- [基于 phantomjs 全页面静态化技术的优化](https://blog.csdn.net/weixin_33669968/article/details/105947546)
-
-
 
 #### phantomJS实现全页面静态化
 
@@ -1373,6 +1368,14 @@ page.open("http://miaoshaserver/resources/getitem.html?id=1",function(status){
 })
 ```
 5. 当页面第一次加载时，`hasInit=0`，那么会发送Ajax请求并渲染页面，渲染完毕后，将`hasInit`置为1。当页面第二次加载时，由于`hasInit=1`，不会再次发送Ajax请求页面。将生成的完全静态化的 html 页面放到 CDN 上去，就可以在 CDN 服务器完全命中。
+
+
+
+**参考资料：**
+- [基于 phantomjs 的全页面静态化技术原理](https://blog.csdn.net/weixin_33669968/article/details/105947547)
+- [基于 phantomjs 全页面静态化技术的优化](https://blog.csdn.net/weixin_33669968/article/details/105947546)
+
+
 
 ### 小结
 
