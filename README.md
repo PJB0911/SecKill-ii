@@ -1232,7 +1232,7 @@ CDN服务器，既充当了浏览器的服务端，又充当了Nginx的客户端
 
 ### 全页面静态化
 
-现在的架构是，用户通过CDN请求到了静态资源，然后静态页面会在加载的时候，发送一个Ajax请求到后端，接收到后端的响应后，再用**DOM渲染**。也就是每一个用户请求，都有一个**请求后端接口**并**渲染**的过程。那能不能取消这个过程，直接在服务器端把页面渲染好，返回一个纯`html`文件给客户端呢？
+当前的架构，用户通过CDN请求到了静态资源，静态页面会在加载的时候，发送Ajax异步请求（如下）服务器获取动态数据，接收到后端的响应的json数据，再用**DOM渲染**。即每一个用户请求，都有一个请求**后端接口**并**渲染**的过程。考虑直接在**服务器端把页面渲染**，返回一个纯`html`文件给客户端。
 
 ```javascript
 //页面加载完成
@@ -1249,15 +1249,27 @@ jQuery(document).ready(function(){
 })
 ```
 
+**全页面静态化**：
+- 在**服务端**完成 html，css，甚至 js 的加载工作，渲染成纯 **html** 文件后直接以静态资源的方式部署到 CDN 上。
+- **不改动任何服务端代码**，通过全页面静态化的手段，把已经渲染好的，布满数据的 html 页面，直接以 **html** 文件的形式部署到 CDN 上；
+- 全页面静态化的技术和网页爬虫非常的像，网页爬虫不知道引用的 js 文件或 css 文件，只知道最后爬出来的文件是一个可以在浏览器中渲染的文件；
+
+**参考资料：**
+- [基于 phantomjs 的全页面静态化技术原理](https://blog.csdn.net/weixin_33669968/article/details/105947547)
+- [基于 phantomjs 全页面静态化技术的优化](https://blog.csdn.net/weixin_33669968/article/details/105947546)
+
+
+
 #### phantomJS实现全页面静态化
 
-phantomJS就像一个爬虫，会把页面中的JS执行完毕后，返回一个渲染完成的`html`文件。
-
+phantomjs 是一个无头浏览器，可以借助其模拟 webkit js 的执行，就像一个爬虫，会把页面中的JS执行完毕后，返回一个渲染完成的`html`文件。
+1. 新建 phantomjs 脚本 `getitem.js`。
 ```javascript
 //引入包
 var page = require("webpage").create();
 var fs = require("fs");
-page.open("http://miaoshaserver/resources/getitem.html?id=2",function(status){
+page.open("http://miaoshaserver/resources/getitem.html?id=1",function(status){
+	console.log("status = " + status);
     setTimeout(function(){
         fs.write("getitem.html",page.content,"w");
         phantom.exit();
@@ -1265,11 +1277,11 @@ page.open("http://miaoshaserver/resources/getitem.html?id=2",function(status){
 })
 ```
 
-打开`getitem.hmtl`，发现里面的标签都正确填充了，但是**还是发送了一次Ajax请求**，这不是我们想看到的。原因就在于，就算页面渲染完毕，Ajax请求的代码块仍然存在，仍然会发送。
+打开指定目录下生成的`getitem.hmtl`，发现里面的标签都正确填充了，但是**还是发送了一次Ajax请求**。原因就在于，页面渲染完毕，Ajax请求的代码块仍然存在，仍然会发送。
 
-在页面中添加一个隐藏域：`<input type="hidden" id="isInit" value="0"/>`。
+2. 修改源文件 `getitem.html` （不是1中生成的）中的内容，在页面中添加一个隐藏域：`<input type="hidden" id="isInit" value="0"/>`。
 
-新增`hasInit`、`setHasInit`、`initView`三个函数。
+3. 新增`hasInit`、`setHasInit`、`initView`三个函数。目的在于，由无头浏览器执行完，并且生成出来的静态 html 页面，由用户再去打开的时候 ，不会再发 ajax 请求给后端。
 
 ```javascript
 function hasInit() {
@@ -1284,7 +1296,8 @@ function setHasInit() {
 function initView() {
     var isInit = hasInit();
     //如果渲染过，直接返回
-    if (isInit == "1") return;
+    if (isInit == "1") 
+		return;
     //否则发送ajax请求
     $.ajax({
         ···
@@ -1301,12 +1314,12 @@ function initView() {
 }
 ```
 
-修改phantomJS代码。
+4. 修改phantomJS代码。
 
 ```javascript
 var page = require("webpage").create();
 var fs = require("fs");
-page.open("http://miaoshaserver/resources/getitem.html?id=2",function(status){
+page.open("http://miaoshaserver/resources/getitem.html?id=1",function(status){
     //每隔1秒就尝试一次，防止JS没加载完
     var isInit = "0";
     setInterval(function(){
@@ -1326,19 +1339,18 @@ page.open("http://miaoshaserver/resources/getitem.html?id=2",function(status){
     },1000);
 })
 ```
-
-这样，当页面第一次加载时，`hasInit=0`，那么会发送Ajax请求并渲染页面，渲染完毕后，将`hasInit`置为1。当页面第二次加载时，由于`hasInit=1`，不会再次发送Ajax请求页面。
+5. 当页面第一次加载时，`hasInit=0`，那么会发送Ajax请求并渲染页面，渲染完毕后，将`hasInit`置为1。当页面第二次加载时，由于`hasInit=1`，不会再次发送Ajax请求页面。将生成的完全静态化的 html 页面放到 CDN 上去，就可以在 CDN 服务器完全命中。
 
 ### 小结
 
 这一章我们
 
 1. 首先使用**CDN技术**将静态资源部署到CDN服务器上，提高了静态资源的响应速度。
-2. 然后我们使用**全页面静态化技术**，使得用户在请求页面的时候，不会每次都去请求后端接口，然后进行页面渲染。而是直接得到一个已经渲染好的HTML页面，提高了响应速度。
+2. 使用**全页面静态化技术**，使得用户在请求页面的时候，不会每次都去请求后端接口，然后进行页面渲染，而是直接得到一个已经渲染好的HTML页面，提高了响应速度。
 
 ### 下一步优化方向
 
-接下里我们会对**交易下单接口**进行性能优化，包括缓存库存、异步扣减库存等。
+接下来对**交易下单接口**进行性能优化，包括缓存库存、异步扣减库存等。
 
 ------
 
