@@ -405,6 +405,10 @@ public class WebServerConfiguration implements WebServerFactoryCustomizer<Config
 未调整线程数之前（2核CPU），200*50个请求，TPS在**150**左右，平均响应**1000毫秒**。调整之后，TPS在**250**左右，平均响应**400**毫秒。
 
 
+
+**步骤参考：**
+- [1 spring-boot压测调优](https://blog.csdn.net/haozi_rou/article/details/105281588)
+
 ### 小结
 
 这一节我们通过`pstree -p pid | wc -l`和`top -H`指令，配合`jmeter`压测工具：
@@ -518,11 +522,11 @@ server{
 
 #### 1. epoll多路复用
 
-在了解**epoll多路复用**之前，先看看**Java BIO**模型，也就是Blocking IO，阻塞模型。当客户端与服务器建立连接之后，通过`Socket.write()`向服务器发送数据，只有当数据写完之后，才会发送。如果当Socket缓冲区满了，那就不得不阻塞等待。
+- 传统java开发都会使用**BIO**模型，也就是Blocking IO，阻塞模型。当客户端与服务器建立连接之后，通过`Socket.write()`向服务器发送数据，只有当数据写完之后，才会发送。如果当Socket缓冲区满了，那就不得不阻塞等待。
 
-接下来看看**Linux Select**模型。该模式下，会监听一定数量的客户端连接，一旦发现有变动，就会唤醒自己，然后遍历这些连接，看哪些连接发生了变化，执行IO操作。相比阻塞式的BIO，效率更高，但是也有个问题，如果10000个连接变动了1个，那么效率将会十分低下。此外，**Java NIO**，即New IO或者Non-Blocking IO就借鉴了Linux Select模型。
+- **Linux Select**模型。该模式下，会监听一定数量的客户端连接，一旦发现有变动，就会唤醒自己，然后轮询这些连接，看哪些连接发生了变化，执行IO操作。相比阻塞式的BIO，效率更高，但是也有个问题，如果10000个连接变动了1个，那么效率将会十分低下。此外，**Java NIO**，即New IO或者Non-Blocking IO就借鉴了Linux Select模型。
 
-而**epoll模型**，在**Linux Select**模型之上，新增了**回调函数**，一旦某个连接发生变化，直接执行回调函数，不用遍历，效率更高。
+- **epoll模型**，在**Linux Select**模型之上，新增了**回调函数**，一旦某个连接发生变化，直接执行回调函数，不用遍历，效率更高。
 
 #### 2. master-worker进程模型
 
@@ -536,7 +540,7 @@ server{
 
 - **Master-worker高效原理**
 
-客户端的请求，并不会被`master`进程处理，而是交给下面的`worker`进程来处理，多个`worker`进程通过“**抢占**”的方式，取得处理权。如果某个`worker`挂了，`master`会立刻感知到，用一个新的`worker`代替。这就是Nginx高效率的原因之一，也是可以平滑重启的原理。
+客户端的请求，并不会被`master`进程处理，而是交给下面的`worker`进程来处理，多个`worker`进程通过“**抢占**”的方式，取得处理权。`master`进程只处理管理员的信号，当配置或命令发生变化的时候，`master`会马上感知到并通知`worker`，并new出新的worker进程，将老的worker进程的连接转移到新的worker上如果。这就是Nginx高效率的原因之一，也是可以平滑重启的原理。
 
 此外，`worker`进程是单线程的，没有阻塞的情况下，效率很高。而epoll模型避免了阻塞。
 
@@ -544,7 +548,7 @@ server{
 
 #### 3. Nginx高性能原因—协程机制
 
-Nginx引入了一种比线程更小的概念，那就是“**协程**”。协程依附于内存模型，切换开销更小；遇到阻塞，Nginx会立刻剥夺执行权；由于在同一个线程内，也不需要加锁。
+Nginx引入了一种比线程更小的概念，那就是“**协程**”。协程是比线程更小的模型，它依附于线程的内存模型，切换开销更小。如果协程程序遇到阻塞，nginx的协程机制会自动的把协程的权限剥夺，并在线程中掉另一个非阻塞的线程去执行，代码同步编写非常简单，而且由于协程依附于线程，所以是串行的，不需要加锁。
 
 **步骤参考：**
 - [2 nginx分布式扩展](https://blog.csdn.net/haozi_rou/article/details/105290258)
@@ -592,6 +596,8 @@ spring.redis.password=
 this.httpServletRequest.getSession().setAttribute("IS_LOGIN",true);
 this.httpServletRequest.getSession().setAttribute("LOGIN_USER",userModel);
 ```
+
+**缺陷**：在移动端或是很多浏览器会禁用cookie，导致通过cookie不奏效，因此可以采用基于token的方式。
 
 ### 基于Token传输
 
