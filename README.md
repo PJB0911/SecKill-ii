@@ -102,7 +102,7 @@
   * [事务提交问题](#事务提交问题)
     * [解决方法](#解决方法-1)
   * [事务型消息](#事务型消息)
-    * [更新下单流程](#更新下单流程)
+  * [更新下单流程](#更新下单流程)
   * [小结](#小结-6)
   * [下一步优化方向](#下一步优化方向-6)
 * [库存流水](#库存流水)
@@ -134,6 +134,7 @@
     * [黄牛为什么难防](#黄牛为什么难防)
     * [防黄牛方案](#防黄牛方案)
   * [小结](#小结-9)
+  * [总结—下单流程](#总结下单流程)
 ------
 
 
@@ -1814,7 +1815,7 @@ transactionMQProducer.setTransactionListener(new TransactionListener() {
 
 4. 在**事务型消息中去执行下单操作**，下单失败，则消息回滚，**不会去数据库扣减库存**。下单成功，则消息被消费，**扣减数据库库存**。
 
-#### 更新下单流程
+### 更新下单流程
 
 之前的下单流程是：在`OrderController`里面调用了`OrderService.createOrder`方法，然后在该方法最后发送了异步消息，会导致异步消息丢失的问题。所以引入了**事务型消息**。
 
@@ -1990,14 +1991,20 @@ String stockLogId = itemService.initStockLog(itemId, amount);
 
 秒杀秒杀，就是在活动开始的一瞬间，有大量流量涌入，优化不当，会导致服务器停滞，甚至宕机。所以引入流量削峰技术十分有必要。
 
+
+
+
+### 业务解耦—秒杀令牌
+
 **秒杀令牌原理**：
 - 秒杀接口需要依靠令牌才能进入。秒杀令牌由秒杀活动模块负责生成。
 - 秒杀活动模块对秒杀令牌生成全权处理，逻辑收口。
 - 秒杀下单前用户需要先获得令牌才能秒杀。
 
-### 业务解耦—秒杀令牌
+**秒杀令牌**和**隐藏秒杀接口地址**的作用相似，目的都是为了秒杀开始之前，秒杀地址对客户端不可见,减少作弊带来的流量。[秒杀地址的隐藏](https://github.com/Grootzz/seckill#%E5%AE%89%E5%85%A8%E4%BC%98%E5%8C%96)
 
 之前**验证逻辑**和**下单逻辑**都耦合在`OrderService.createOrder`里面，现在利用秒杀令牌，使校验逻辑和下单逻辑分离。
+
 
 1. `PromoService`新开一个`generateSecondKillToken`，将活动、商品、用户信息校验逻辑封装在里面。
 
@@ -2025,9 +2032,12 @@ public String generateSecondKillToken(Integer promoId,Integer itemId,Integer use
     UserModel userModel=userService.getUserByIdInCache(userId);
     if(userModel==null) return null;
     //生成Token，并且存入redis内，5分钟时限
-    String token= UUID.randomUUID().toString().replace("-","");
-    redisTemplate.opsForValue().set("promo_token_"+promoId+"_userid_"+userId+"_itemid_"+itemId,token);
-    redisTemplate.expire("promo_token_"+promoId+"_userid_"+userId+"_itemid_"+itemId, 5,TimeUnit.MINUTES);
+    String token= (String) redisTemplate.opsForValue().get("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId);
+	if(token == null){
+		token = UUID.randomUUID().toString().replace("-", "");
+		redisTemplate.opsForValue().set("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId, token);
+		redisTemplate.expire("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId, 5, TimeUnit.MINUTES);
+    }
     return token;
 }
 ```
@@ -2158,6 +2168,7 @@ future.get();
 
 这样，就算瞬间涌入再多流量，得到处理的也就20个，其它全部等待。
 
+
 ### 小结
 
 1. 使用秒杀令牌，实现了校验业务和下单业务的分离，也限制流量，同时为秒杀大闸做了铺垫。
@@ -2173,6 +2184,10 @@ future.get();
 ### 验证码技术
 
 之前的流程是，用户点击下单后，会直接拿到令牌然后执行下单流程。现在，用户点击下单后，前端会弹出一个“验证码”，用户输入之后，才能请求下单接口。
+
+**验证码的作用**： 	
+-防止利用机器人等手段防止非目标用户参与秒杀；
+-减少单位时间内的请求数量。对于一个秒杀商品，在开始秒杀后肯定会有许多用户参与秒杀，那么在开始秒杀的时候，用户请求数量是巨大，从而对服务器产生较大的压力，而通过验证码的方式就可以有效地将集中式的请求分散，从而达到削减请求峰值的目的。
 
 1. 生成验证码的[CodeUti](https://github.com/PJB0911/SecKill-ii/blob/master/src/main/java/com/gan/util/CodeUtil.java)
 
@@ -2220,6 +2235,7 @@ public CommonReturnType generateToken(··· @RequestParam(name = "verifyCode") 
 
 但是一般衡量并发性，是用TPS或者QPS，而该方案由于限制了线程数，自然不能用TPS或者QPS衡量。
 
+参考redis储存用户访问次数：[接口限流](https://github.com/Grootzz/seckill#%E5%AE%89%E5%85%A8%E4%BC%98%E5%8C%96)
 ### 限流方案—令牌桶/漏桶
 
 #### 令牌桶
@@ -2298,6 +2314,19 @@ if (!orderCreateRateLimiter.tryAcquire())
 3. 介绍了常见的防刷技术以及它们的缺点。介绍了黄牛为什么难防，应该怎样防。
 
 ------
+
+
+
+##总结—下单流程
+
+1. 运营发布秒杀活动，系统初始化，把商品库存数量stock缓存到Redis上面来。
+2. 用户点击下单，需要输入验证码，后端判断验证码是否正确；如果验证码正确，检验库存、用户及活动信息，如果还有库存并且令牌还有余量，返回秒杀令牌Token，将秒杀令牌promoToken作为参数去请求后端秒杀接口；如果没有库存、令牌没有余量，直接返回前端库存不足信息，即后面的大量请求无需给系统带来压力。。
+3. 后端收到秒杀请求，校验秒杀令牌，判断该用户是否已经秒杀到该商品，避免一个账户秒杀多个商品。验证失败，直接返回前端；校验正确，秒杀请求封装后事务性消息入队,同时给前端返回一个code (0)，即代表返回排队中。
+4. Producer事务消息中调用下单方法，执行秒杀事务（redis预减库存，下订单，写入秒杀订单，销量增加）。秒杀方法要么**执行成功**，要么**抛出异常**。执行成功，消费端就可以异步扣减库存，抛出异常，ROLLBACK进行回滚。秒杀方法执行完**宕机**，根据库存流水状态判断秒杀成功、秒杀未完成，秒杀失败，秒杀成功，同上，秒杀未完成，继续等待，秒杀失败，回滚。
+5. 此时，前端根据商品id和用户轮询请求接口SecKillResult,查看是否生成了商品订单，如果请求返回-1代表秒杀失败，返回0代表排队中，返回>0代表商品id说明秒杀成功。
+
+
+##问题汇总
 
 ## 交易优化效果总结
 

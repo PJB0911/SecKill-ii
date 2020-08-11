@@ -73,7 +73,7 @@ public class MqProducer {
                 }
                 return LocalTransactionState.COMMIT_MESSAGE;
             }
-            //处理 UNKNOWN状态
+            //createOrder执行完宕机了，那么这条消息会是UNKNOWN状态,需要checkLocalTransaction处理 UNKNOWN状态
             @Override
             public LocalTransactionState checkLocalTransaction(MessageExt message) {
                 //根据是否扣减库存成功，来判断要返回COMMIT，ROLLBACK还是UNKNOWN

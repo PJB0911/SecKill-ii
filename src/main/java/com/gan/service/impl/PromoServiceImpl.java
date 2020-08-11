@@ -101,9 +101,12 @@ public class PromoServiceImpl implements PromoService {
             return null;
 
         //生成Token，并且存入redis内，5分钟时限
-        String token = UUID.randomUUID().toString().replace("-", "");
-        redisTemplate.opsForValue().set("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId, token);
-        redisTemplate.expire("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId, 5, TimeUnit.MINUTES);
+        String token= (String) redisTemplate.opsForValue().get("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId);
+        if(token == null){
+            token = UUID.randomUUID().toString().replace("-", "");
+            redisTemplate.opsForValue().set("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId, token);
+            redisTemplate.expire("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId, 5, TimeUnit.MINUTES);
+        }
         return token;
     }
 
