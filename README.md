@@ -1445,13 +1445,15 @@ if(itemModel==null)
 UserModel userModel=userService.getUserById(userId);
 ```
 
-这还没完，最后还要对`stock`**库存表进行-1`update`操作**，对`order_info`**订单信息表进行添加`insert`操作**，对`item`**商品信息表进行销量+1`update`操作**。仅仅一个下单，就有**6次**数据库I/O操作，此外，减库存操作还存在**行锁阻塞**，所以下单接口并发性能很低。
+最后还要对`stock`**库存表进行-1`update`操作**，对`order_info`**订单信息表进行添加`insert`操作**，对`item`**商品信息表进行销量+1`update`操作**。仅仅一个下单，就有**6次**数据库I/O操作，此外，减库存操作还存在**行锁阻塞**，所以下单接口并发性能很低。
+
+**优化核心思想：减少对数据库的访问。**
 
 ### 交易验证优化
 
 查询用户信息，是为了**用户风控策略**。判断用户信息是否存在是最基本的策略，在企业级中，还可以判断用户状态是否异常，是否异地登录等等。用户风控的信息，实际上可以缓存化，放到Redis里面。
 
-查询商品信息、活动信息，是为了**活动校验策略**。商品信息、活动信息，也可以存入缓存中。活动信息，由于具有**时效性**，需要具备紧急下线的能力，可以编写一个接口，清除活动信息的缓存。
+查询商品信息、活动信息，是为了**活动校验策略**。商品信息、活动信息，也可以存入缓存中。活动信息，由于具有**时效性**，需要具备紧急下线的能力，可以编写一个接口，清除活动信息的redis缓存。
 
 #### 用户校验缓存优化
 
@@ -1487,9 +1489,9 @@ public ItemModel getItemByIdInCache(Integer id) {
 
 #### 缓存优化后的效果
 
-之前压测1000*20个请求，TPS在**450**左右，平均响应**1500毫秒**。
+压测1000*20个请求，TPS在**450**左右，平均响应**1500毫秒**。
 
-优化之后，TPS在**1200**左右，平均响应**600毫秒**，可见效果十分好。
+优化之后，TPS在**1200**左右，平均响应**600毫秒**。
 
 ### 库存扣减优化
 
@@ -1499,19 +1501,17 @@ public ItemModel getItemByIdInCache(Integer id) {
 
 #### 库存扣减缓存优化
 
-之前下单，是**直接操作数据库**，一旦秒杀活动开始，大量的流量涌入扣减库存接口，**数据库压力很大**。那么可不可以先在**缓存中**下单？答案是可以的。如果要在缓存中扣减库存，需要解决**两个**问题，第一个是活动开始前，将数据库的库存信息，同步到缓存中。第二个是下单之后，要将缓存中的库存信息同步到数据库中。这就需要用到**异步消息队列**——也就是**RocketMQ**。
+之前的下单，是**直接操作数据库**，一旦秒杀活动开始，大量的流量涌入扣减库存接口，**数据库压力很大**。所以采用在**缓存**中**扣减库存**，需要解决**两个**问题，第一个是活动开始前，将数据库的库存信息，同步到缓存中。第二个是下单之后，要将缓存中的库存信息同步到数据库中。这就需要用到**异步消息队列**——*RocketMQ**。
 
-**RocketMQ**
+**1 RocketMQ 安装配置**
 
-RocketMQ是阿里巴巴在RabbitMQ基础上改进的一个消息中间件，具体的就不赘述了。
+RocketMQ是阿里巴巴在RabbitMQ基础上改进的一个消息中间件，具体见[浅入浅出-RocketMQ](https://mp.weixin.qq.com/s/y-4TVwbc7AFGEA7q-_OkYw)。
 
-只是要特别说明一下，默认的RocketMQ**配置很坑**（`Xms4g Xmx4g Xmn2g`），会导致Java**内存不足**的问题。需要修改`mqnamesrv.xml`，将`NewSize`、`MaxNewSize`、`PermSize`、`MaxPermSize`设置为自己服务器可承受值。
+默认的RocketMQ**配置**需要较大内存（`Xms4g Xmx4g Xmn2g`），会导致Java**内存不足**的问题。需要修改`bin/runbroker.sh`，`bin/runserver.sh`，`bin/tool.sh`、`conf/borker.conf `等文件配置。具体配置可参考[交易方面的优化RocketMQ](https://blog.csdn.net/haozi_rou/article/details/105410523)
 
-此外，`mqnamesrv`甚至不能用`localhost`启动，必须是本机公网IP，否则报`RemotingTooMuchRequestException`。
+**2 同步数据库库存到缓存**
 
-**同步数据库库存到缓存**
-
-`PromoService`新建一个`publishPromo`的方法，把数据库的缓存存到Redis里面去。
+- `PromoService`新建一个`publishPromo`的方法，把数据库的缓存存到Redis里面去。
 
 ```java
 public void publishPromo(Integer promoId) {
@@ -1525,30 +1525,30 @@ public void publishPromo(Integer promoId) {
 }
 ```
 
-这里需要注意的是，当我们把**库存存到Redis的时候**，**商品可能被下单**，这样数据库的库存和Redis的库存就**不一致**了。解决方法就是活动**未开始**的时候，商品是**下架状态**，不能被下单。
+当我们把**库存存到Redis的时候**，**商品可能被下单**，这样数据库的库存和Redis的库存就**不一致**了。解决方法就是活动**未开始**的时候，商品是**下架状态**，不能被下单。
 
-最后，在`ItemService`里面修改`decreaseStock`方法，在Redis里面扣减库存。
+- 修改`ItemService`中的`decreaseStock`方法，在Redis里面扣减库存。
 
 ```java
 public boolean decreaseStock(Integer itemId, Integer amount) {
     // 老方法，直接在数据库减
     // int affectedRow=itemStockDOMapper.decreaseStock(itemId,amount);
-    long affectedRow=redisTemplate.opsForValue().
+    long result=redisTemplate.opsForValue().
                 increment("promo_item_stock_"+itemId,amount.intValue()*-1);
     return (affectedRow >= 0);
 }
 ```
 
-**同步缓存库存到数据库（异步扣减库存）**
+**3 同步缓存库存到数据库（异步扣减库存）**
 
-引入RocketMQ相应`jar`包，在Spring Boot配置文件中添加MQ配置。
+- 引入RocketMQ相应`jar`包，在Spring Boot配置文件中添加MQ配置。
 
 ```properties
 mq.nameserver.addr=IP:9876
 mq.topicname=stock
 ```
 
-新建一个`mq.MQProducer`类，编写`init`方法，初始化生产者。
+- 新建一个`mq.MQProducer`类，编写`init`方法，初始化生产者。
 
 ```java
 public class MqProducer {
@@ -1570,7 +1570,7 @@ public class MqProducer {
 }
 ```
 
-编写`asyncReduceStock`方法，实现异步扣减库存。
+- 编写`asyncReduceStock`方法，实现异步扣减库存。
 
 ```java
 public boolean asyncReduceStock(Integer itemId, Integer amount)  {
@@ -1591,7 +1591,7 @@ public boolean asyncReduceStock(Integer itemId, Integer amount)  {
 }
 ```
 
-新建一个`mq.MqConsumer`类，与`MqProducer`类类似，也有一个`init`方法，实现**异步扣减库存**的逻辑。
+- 新建一个`mq.MqConsumer`类，与`MqProducer`类类似，也有一个`init`方法，实现**异步扣减库存**的逻辑。
 
 ```java
 public class MqConsumer {
@@ -1632,7 +1632,7 @@ public class MqConsumer {
 }
 ```
 
-`ItemService.decreaseStock`方法也要做更改：
+- 修改`ItemService.decreaseStock`方法：
 
 ```java
 public boolean decreaseStock(Integer itemId, Integer amount) {
@@ -1658,22 +1658,21 @@ public boolean decreaseStock(Integer itemId, Integer amount) {
 
 **异步扣减库存存在的问题**
 
-1. 如果发送消息失败，只能回滚Redis。
-2. 消费端从数据库扣减操作执行失败，如何处理（这里默认会成功）？
+1. 如果异步消息发送失败，只能回滚Redis。
+2. 消费端从数据库扣减操作执行失败，如何处理。
 3. 下单失败无法正确回补库存（比如用户取消订单）。
 
-所以需要引入**事务型消息**。
 
 ### 小结
 
 这一章我们
 
 1. 首先对**交易验证**进行了优化，把对用户、商品、活动的查询从数据库转移到了缓存中，优化效果明显。
-2. 随后，我们优化了减库存的逻辑，一是添加了索引，从锁表变成了锁行；二是将减库存的操作也移到了缓存中，先从缓存中扣，再从数据库扣。这就涉及到了**异步减库存**，所以需要引入**消息中间件**。
+2. 我们优化了减库存的逻辑，一是添加了索引，从锁表变成了锁行；二是将减库存的操作也移到了缓存中，先从缓存中扣，再从数据库扣。这就涉及到了**异步减库存**，所以引入**消息中间件**。
 
 ### 下一步优化方向
 
-正如**异步扣减库存存在的问题**所述，这么处理还有许多漏洞，下一章将会详解。
+正如**异步扣减库存存在的问题**所述，这么处理还有许多漏洞，下一章将会引入**事务型消息**。
 
 ## 交易优化之事务型消息
 
