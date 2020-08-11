@@ -406,7 +406,7 @@ public class WebServerConfiguration implements WebServerFactoryCustomizer<Config
 
 
 
-**步骤参考：**
+**参考资料：**
 - [1 spring-boot压测调优](https://blog.csdn.net/haozi_rou/article/details/105281588)
 
 ### 小结
@@ -550,7 +550,8 @@ server{
 
 Nginx引入了一种比线程更小的概念，那就是“**协程**”。协程是比线程更小的模型，它依附于线程的内存模型，切换开销更小。如果协程程序遇到阻塞，nginx的协程机制会自动的把协程的权限剥夺，并在线程中掉另一个非阻塞的线程去执行，代码同步编写非常简单，而且由于协程依附于线程，所以是串行的，不需要加锁。
 
-**步骤参考：**
+**参考资料：**
+- [什么是协程](https://blog.csdn.net/zheng199172/article/details/88800275)
 - [2 nginx分布式扩展](https://blog.csdn.net/haozi_rou/article/details/105290258)
 - [3 nginx长连接优化](https://blog.csdn.net/haozi_rou/article/details/105295165)
 
@@ -699,9 +700,11 @@ if(userModel==null){
 
 ### 优化商品查询接口—Redis缓存
 
+redis主要有**单机版**、**sentinal哨兵模式**和**集群cluster模式**。**哨兵模式**，用一个sentinal节点管理redis，sentinal和主从redis有长连接，并发送心跳，sentinal可以决定master和slave，应用程序只需要询问sentinal就可以知道哪一台是master，然后连接相应的master即可。**cluster模式**，多台redis的情况下，根据cluster来决定哪些是主分片，哪些是从分片，所有分片都有连接，应用程序只要连接到任意一台机器，就可以获取所有数据。
+
 在商品查询接口`ItemController.getItem`中，客户端请求查询`ItemId`，就调用`ItemService`去数据库查询一次。`ItemService`会查三张表，分别是商品信息表`item`表、商品库存`stock`表和秒杀活动表`promo`，十分影响性能。
 
-所以将从数据库查询到的的数据存入Redis中，这样每次请求先进行**缓存查询**，如果命中则直接从Redis服务器中获取返回;如果没有，则从数据库查询并存到Redis服务器。
+本项目使用**单机版Redis缓存**，从数据库查询到的的数据存入Redis中，这样每次请求先进行**缓存查询**，如果命中则直接从Redis服务器中获取返回;如果没有，则从数据库查询并存到Redis服务器。
 
 ```java
 @RequestMapping(value = "/get",method = {RequestMethod.GET})
@@ -797,7 +800,7 @@ Redis缓存虽好，但是分布式系统中有网络I/O，没有本地缓存快
 
 本地缓存，是`HashMap`结构，但是`HashMap`不支持并发读写，肯定是不行的。`j.u.c`包里面的`ConcurrentHashMap`虽然也能用，但是无法高效处理过期时限、没有淘汰机制等问题，所以这里使用了`Google`的`Guava Cache`方案。
 
-`Guava Cache`除了线程安全外，还可以控制超时时间，提供淘汰机制。
+`Guava Cache`除了线程安全外，还可以控制超时时间，提供LRU淘汰机制。
 
 1. 引用`google.guava`包后，在`service`包下新建一个`CacheService`类。
 
@@ -875,7 +878,7 @@ public CommonReturnType getItem(@RequestParam(name = "id")Integer id){
 
 前端（客户端）请求Nginx服务器，Nginx有分发过程，需要去请求后面的3台应用服务器，存在一定网络I/O，所以需要引入Nginx缓存，直接把**热点数据存放到Nginx服务器上**。
 
-Nginx Proxy Cache的原理是基于**文件系统**的，它把后端返回的响应内容，作为**文件**存放在Nginx指定目录下。
+Nginx Proxy Cache的原理是基于**文件系统**的，依靠内存缓存文件地址，它把后端返回的响应内容，作为**文件**存放在Nginx指定目录下。
 
 **参考资料：**
 - [nginx 反向代理之 proxy_cache](https://www.cnblogs.com/yyxianren/p/10832172.html)
@@ -973,13 +976,14 @@ location /helloworld {
 
 **参考资料：**
 - [Nginx+lua+openresty系列 | 第六篇：Lua入门](https://mp.weixin.qq.com/s?__biz=MzU5NzgwNDIyNQ==&mid=2247483763&idx=1&sn=5aad2f0d3f73d7e3e474ccf568e0f5a9&chksm=fe4c94ddc93b1dcbf829ccc03af6606d2fb8f25c60682691ba19a593721004d7b500e675eab9&token=480040588&lang=zh_CN#rd)
+- [5 查询性能优化（重点阅读Nginx lua知识介绍）](https://blog.csdn.net/haozi_rou/article/details/105343059)
 
 
 ### OpenResty—Shared dict缓存
 
 OpenResty对Nginx进行了扩展，添加了很多功能，比如集成了lua开发环境、提供了对MySQL、Redis、Memcached的支持等。比原版Nginx使用起来更加方便。
 
-OpenResty的Shared dict是一种类似于`HashMap`的Key-Value**内存**结构，对所有`worker`进程可见，并且可以指定LRU淘汰规则。
+Shared dict,共享内存字典,Key-Value**内存**结构，对所有`worker`进程可见，并且可以指定LRU淘汰规则。
 
 1. 和配置`proxy cache`一样，我们需要指定一个名为`my_cache`，大小为128m的`lua_shared_dict`：
 
@@ -1104,6 +1108,7 @@ location /itemredis/get{
 **参考资料：**
 - [Nginx+Lua+Redis 实现高性能缓存数据读取](https://segmentfault.com/p/1210000011625271/read)
 - [使用nginx+lua脚本读写redis缓存](https://my.oschina.net/u/1175305/blog/1799941)
+- [6 nginx的共享字典、redis实战简介](https://blog.csdn.net/haozi_rou/article/details/105364264)
 
 
 ### 缓存雪崩、缓存穿透、缓存更新
