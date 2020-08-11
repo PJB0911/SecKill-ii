@@ -1056,7 +1056,7 @@ Nginx的本地Shared dict内存缓存受制于**缓存容量**和**缓存更新*
 ![](https://github.com/PJB0911/SecKill-ii/blob/master/images/nginx-redis.png)
 
 
-1. 在lua文件夹下，新建一个`itemshareddict.lua`脚本。
+1. 在lua文件夹下，新建一个`itemredis.lua`脚本。
 
 ```lua
 local args = ngx.req.get_uri_args()
@@ -1095,9 +1095,11 @@ location /itemredis/get{
 ### 缓存雪崩、缓存穿透、缓存更新
 
 **问题1**：缓存穿透指的是对某个一定不存在的数据进行请求，该请求将会穿透缓存到达数据库。
+
 **解决方案**：1.对这些不存在的数据缓存一个空数据，对这类请求进行过滤。2.布隆过滤器
 
 **问题2**：缓存雪崩指的是由于数据没有被加载到缓存中，或者缓存数据在同一时间大面积失效（过期），又或者缓存服务器宕机，导致大量的请求都到达数据库。
+
 **解决方案**：
 - 为了防止缓存在同一时间大面积过期导致的缓存雪崩，可以通过观察用户行为，合理设置缓存过期时间来实现；
 - 为了防止缓存服务器宕机出现的缓存雪崩，可以使用分布式缓存，分布式缓存中每一个节点只缓存部分的数据，当某个节点宕机时可以保证其它节点的缓存仍然可用。
@@ -1105,6 +1107,7 @@ location /itemredis/get{
 例如：首先针对不同的缓存设置不同的过期时间，比如session缓存，在userKey这个前缀中，设置是30分钟过期，并且每次用户响应的话更新缓存时间。这样每次取session,都会延长30分钟，相对来说，就减少了缓存过期的几率
 
 **问题3**：缓存一致性要求数据更新的同时缓存数据也能够实时更新。
+
 **解决方案**：需要更新数据时，先更新数据库，然后把缓存里对应的数据删除。具体见参考资料↓。
 
 **参考资料：**
@@ -1120,11 +1123,11 @@ location /itemredis/get{
 2. 使用本地缓存**guava**在Redis之前再做一层缓存。
 3. 将缓存提前，提到离客户端更近的Nginx服务器上，减少网络I/O，开启了Nginx的**proxy cache**，由于proxy cache是基于文件系统的，有磁盘I/O，性能没有得到提升。
 4. 使用**OpenResty Shared Dict+Nginx+Lua**将Nginx的缓存从磁盘提到服务器内存，减少了网络IO,提升了性能。
-5. Shared dict存在**缓存容量**和**缓存更新**问题，使用nginx+lua脚本读写redis缓存，但相比于Shared dict增加了网络IO。
+5. Shared dict存在**缓存容量**和**缓存更新**问题，使用nginx+lua脚本直接读取redis缓存，但相比于Shared dict增加了网络IO。
 
 ### 下一步优化方向
 
-现在的架构，**前端资源每次都要进行请求**，能不能像缓存数据库数据一样，对**前端资源进行缓存呢**？答案也是可以的，下一章将讲解静态资源CDN，将页面静态化。
+当前的架构，**前端资源每次都要进行请求**，为了减少前端静态资源请求，将**前端资源**进行缓存。下一章将讲解静态资源CDN，将页面静态化。
 
 ------
 
@@ -1132,9 +1135,9 @@ location /itemredis/get{
 
 ### 项目架构
 
-之前静态资源是直接从Nginx服务器上获取，而现在会先去CDN服务器上获取，如果没有则回源到Nginx服务器上获取。
+当前架构，静态资源是直接从Nginx服务器上获取，而现在会先去CDN服务器上获取，如果没有则回源到Nginx服务器上获取。
 
-![](https://raw.githubusercontent.com/MaJesTySA/miaosha_Shop/master/imgs/cdn.png)
+![](https://github.com/PJB0911/SecKill-ii/blob/master/images/frame6.png)
 
 ### CDN
 
