@@ -1172,31 +1172,31 @@ CDN一般用来存储（缓存）项目的静态资源。访问静态资源，�
 | no-cache    | 也会缓存，但是使用缓存之前会询问服务器，该缓存是否可用 |
 | no-store    | 不缓存任何响应内容                                     |
 
-**选择缓存策略**
+- **选择缓存策略**
 
 如果不缓存，那就选择`no-store`。如果需要缓存，但是需要重新验证，则选择`no-cache`；如果不需要重新验证，则选择`private`或者`public`。然后设置`max-age`，最后添加`ETag Header`。
 
 <img src="https://github.com/PJB0911/SecKill-ii/blob/master/images/choosehead.png" width=60% />
 
-**有效性验证**
+- **有效性验证**
 
 **ETag**：第一次请求资源的时候，服务器会根据**资源内容**生成一个**唯一标示ETag**，并返回给浏览器。浏览器下一次请求，会把**ETag**（If-None-Match）发送给服务器，与服务器的ETag进行对比。如果一致，就返回一个**304**响应，即**Not Modify**，**表示浏览器缓存的资源文件依然是可用的**，直接使用就行了，不用重新请求。
 
-**请求资源流程**
+- **请求资源流程**
 
 <img src="https://github.com/PJB0911/SecKill-ii/blob/master/images/requestResrProcess.png" width=80% />
 
 #### **2 浏览器三种刷新方式**
 
-**a标签/回车刷新**
+- **a标签/回车刷新**
 
 查看`max-age`是否有效，有效直接从缓存中获取，无效进入缓存协商逻辑。
 
-**F5刷新**
+- **F5刷新**
 
 取消`max-age`或者将其设置为0，直接进入缓存协商逻辑。
 
-**CTRL+F5强制刷新**
+- **CTRL+F5强制刷新**
 
 直接去掉`cache-control`和协商头，重新请求资源。
 
