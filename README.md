@@ -1682,14 +1682,15 @@ public boolean decreaseStock(Integer itemId, Integer amount) {
 
 #### 解决方法
 
-解决的方法就是在订单入库、增加销量成功之后，再发送异步消息，`ItemService.decreaseStock`只**负责扣减Redis库存**，**不发送异步消息**。
+解决的方法就是在订单入库、增加销量成功之后，再发送异步消息。
+
+1. `ItemService.decreaseStock`只**负责扣减Redis库存**，**不发送异步消息**。
 
 ```java
 public boolean decreaseStock(Integer itemId, Integer amount) {
-    long affectedRow=redisTemplate.opsForValue().
-                increment("promo_item_stock_"+itemId,amount.intValue()*-1);
+    long result=redisTemplate.opsForValue().increment("promo_item_stock_"+itemId,amount.intValue()*-1);
     //>0，表示Redis扣减成功
-    if(affectedRow>=0){
+    if(result>=0){
         //抽离了发送异步消息的逻辑
         return true;
     } else {
@@ -1705,7 +1706,7 @@ public boolean increaseStock(Integer itemId, Integer amount) {
 }
 ```
 
-将发送异步消息的逻辑抽取出来：
+2. 将发送异步消息的逻辑抽取出来：
 
 ```java
 //ItemService
@@ -1714,7 +1715,7 @@ public boolean asyncDecreaseStock(Integer itemId, Integer amount) {
 }
 ```
 
-再在`OrderService.createOrder`里面调用：
+3. 再在`OrderService.createOrder`里面调用：
 
 ```java
 ···
@@ -1757,13 +1758,13 @@ TransactionSynchronizationManager.registerSynchronization(new TransactionSynchro
 
 上面的做法，依然不能保证万无一失。假设现在**事务提交成功了**，等着执行`afterCommit`方法，这个时候**突然宕机了**，那么**订单已然入库**，**销量已然增加**，但是**去数据库扣减库存的这条消息**却“**丢失**”了。这里就需要引入RocketMQ的事务型消息。
 
-所谓事务型消息，也会被发送到消息队列里面，这条消息处于`prepared`状态，`broker`会接受到这条消息，**但是不会把这条消息给消费者消费**。
+所谓事务型消息，存在二阶段提交的概念，事务型消息会被发送到消息队列里面，这条消息处于`prepared`状态，`broker`会接受到这条消息，**但是不会把这条消息给消费者消费**。
 
-处于`prepared`状态的消息，会执行`TransactionListener`的`executeLocalTransaction`方法，根据执行结果，**改变事务型消息的状态**，**让消费端消费或是不消费**。
+处于`prepared`状态的消息，会执行`TransactionListener`的`executeLocalTransaction`方法，通过它返回Commit或rollback来决定发送的消息执行还是回滚，**改变事务型消息的状态**，**让消费端消费或是不消费**。
 
-在`mq.MqProducer`类里面新注入一个`TransactionMQProducer`类，与`DefaultMQProducer`类似，也需要设置服务器地址、命名空间等。
+1. 在`mq.MqProducer`类里面新注入一个`TransactionMQProducer`类，与`DefaultMQProducer`类似，也需要设置服务器地址、命名空间等。
 
-新建一个`transactionAsyncReduceStock`的方法，该方法使用**事务型消息**进行异步扣减库存。
+2. 新建一个`transactionAsyncReduceStock`的方法，该方法使用**事务型消息**进行异步扣减库存。
 
 ```java
 // 事务型消息同步库存扣减消息
@@ -1791,7 +1792,7 @@ public boolean transactionAsyncReduceStock(Integer userId, Integer itemId, Integ
 }
 ```
 
-这样，就会发送一个事务型消息到`broke`，而处于`prepared`状态的事务型消息，会执行`TransactionListener`的`executeLocalTransaction`方法：
+3. 发送一个事务型消息到`broke`，而处于`prepared`状态的事务型消息，会执行`TransactionListener`的`executeLocalTransaction`方法：
 
 ```java
 transactionMQProducer.setTransactionListener(new TransactionListener() {
@@ -1814,7 +1815,7 @@ transactionMQProducer.setTransactionListener(new TransactionListener() {
 }
 ```
 
-这样，在**事务型消息中去执行下单操作**，下单失败，则消息回滚，**不会去数据库扣减库存**。下单成功，则消息被消费，**扣减数据库库存**。
+4. 在**事务型消息中去执行下单操作**，下单失败，则消息回滚，**不会去数据库扣减库存**。下单成功，则消息被消费，**扣减数据库库存**。
 
 #### 更新下单流程
 
@@ -1832,13 +1833,13 @@ transactionMQProducer.setTransactionListener(new TransactionListener() {
 
 ### 下一步优化方向
 
-不要以为这样就万事大吉了，上述流程还有一个漏洞，就是当执行`orderService.createOrder`后，突然**又宕机了**，根本没有返回，这个时候事务型消息就会进入`UNKNOWN`状态，我们需要处理这个状态。
+上述流程还有一个漏洞，就是当执行`orderService.createOrder`后，突然**又宕机了**，根本没有返回，这个时候事务型消息就会进入`UNKNOWN`状态，我们需要处理这个状态。
 
-在匿名类`TransactionListener`里面，还需要覆写`checkLocalTransaction`方法，这个方法就是用来处理`UNKNOWN`状态的。应该怎么处理？这就需要引入**库存流水**。
+在匿名类`TransactionListener`里面，还需要覆写`checkLocalTransaction`方法。`UNKNOWN`状态表示`broker`会定期执行`checkLocalTransaction`方法来询问结果这个。因此在生成订单时出问题，也可以通过`UNKNOWN`来让`RocketMQ`自己查询状态。这就需要引入**库存流水**。
 
 ## 库存流水
 
-数据库新建一张`stock_log`的表，用来记录库存流水，添加一个`ItemService.initStockLog`方法。
+1. 数据库新建一张`stock_log`的表，用来记录库存流水，添加一个`ItemService.initStockLog`方法。
 
 ```java
 public String initStockLog(Integer itemId, Integer amount) {
@@ -1853,7 +1854,7 @@ public String initStockLog(Integer itemId, Integer amount) {
 }
 ```
 
-用户请求后端`OrderController.createOrder`接口，我们先初始化库存流水的状态，再调用事务型消息去下单。
+2. 用户请求后端`OrderController.createOrder`接口，我们先初始化库存流水的状态，再调用事务型消息去下单。
 
 ```java
 //OrderController
@@ -1876,7 +1877,7 @@ if (!mqProducer.transactionAsyncReduceStock(userModel.getId(), itemId, promoId, 
 }
 ```
 
-事务型消息会调用`OrderService.createOrder`方法，执行Redis扣减库存、订单入库、销量增加的操作，当这些操作都完成后，就说明下单完成了，**等着异步更新数据库了**。那么需要修改订单流水的状态。
+3. 事务型消息会调用`OrderService.createOrder`方法，执行Redis扣减库存、订单入库、销量增加的操作，当这些操作都完成后，就说明下单完成了，**等着异步更新数据库**。那么需要修改订单流水的状态。
 
 ```java
 //OrderService.createOrder
@@ -1943,7 +1944,7 @@ public LocalTransactionState checkLocalTransaction(MessageExt message) {
 
 现在是用户请求一次`OrderController.createOrder`就初始化一次流水，但是如果10000个用户抢10个商品，就会初始化10000次库存流水，这显然是不行的。
 
-解决的方法是在`ItemService.decreaseStock`中，如果库存没有了，就打上“**售罄标志**”。
+1. 解决的方法是在`ItemService.decreaseStock`中，如果库存没有了，就打上“**售罄标志**”。
 
 ```java
 public boolean decreaseStock(Integer itemId, Integer amount) {
@@ -1962,7 +1963,7 @@ public boolean decreaseStock(Integer itemId, Integer amount) {
 }
 ```
 
-在`OrderController.createOrder`初始化流水之前，先判断一下是否售罄，售罄了就直接抛出异常。
+2. 在`OrderController.createOrder`初始化流水之前，先判断一下是否售罄，售罄了就直接抛出异常。
 
 ```java
 //是否售罄
@@ -1979,12 +1980,12 @@ String stockLogId = itemService.initStockLog(itemId, amount);
 
 此时有两种情况：
 
-1. `createOrder`执行完**没有宕机**，要么**执行成功**，要么**抛出异常**。**执行成功**，那么就说明下单成功了，订单入库了，Redis里的库存扣了，销量增加了，**等待着异步扣减库存**，所以将事务型消息的状态，从`UNKNOWN`变为`COMMIT`，这样消费端就会消费这条消息，异步扣减库存。抛出异常，那么订单入库、Redis库存、销量增加，就会被数据库回滚，此时去异步扣减的消息，就应该“丢弃”，所以发回`ROLLBACK`，进行回滚。
+1. `createOrder`执行完**没有宕机**，要么**执行成功**，要么**抛出异常**。**执行成功**，那么就说明下单成功了，订单入库了，Redis里的库存扣了，销量增加了，**等待着异步扣减库存**，所以将事务型消息的状态，从`UNKNOWN`变为`COMMIT`，这样消费端就会消费这条消息，异步扣减库存；**抛出异常**，那么订单入库、Redis库存、销量增加，就会被数据库回滚，此时去异步扣减的消息，就应该“丢弃”，所以发回`ROLLBACK`，进行回滚。
 2. `createOrder`执行完**宕机**了，那么这条消息会是`UNKNOWN`状态，这个时候就需要在`checkLocalTransaction`进行处理。如果`createOrder`执行完毕，此时`stockLog.status==2`，就说明下单成功，需要去异步扣减库存，所以返回`COMMIT`。如果`status==1`，说明下单还未完成，还需要继续执行下单操作，所以返回`UNKNOWN`。如果`status==3`，说明下单失败，需要回滚，不需要异步扣减库存，所以返回`ROLLBACK`。
 
 #### 可以改进的地方
 
-目前只是扣减库存异步化，实际上销量逻辑和交易逻辑都可以异步化，这里就不赘述了。
+目前只是扣减库存异步化，实际上销量逻辑和交易逻辑都可以异步化，这里就不作赘述。
 
 ### 下一步优化方向
 
