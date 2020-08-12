@@ -109,6 +109,7 @@
   * [下单操作的处理](#下单操作的处理)
   * [UNKNOWN状态处理](#unknown状态处理)
   * [库存售罄处理](#库存售罄处理)
+  * [防止同一用户多次秒杀下单](#防止同一用户多次秒杀下单)
   * [小结](#小结-7)
     * [可以改进的地方](#可以改进的地方)
   * [下一步优化方向](#下一步优化方向-7)
@@ -1975,6 +1976,53 @@ if (redisTemplate.hasKey("promo_item_stock_invalid_"+itemId))
 String stockLogId = itemService.initStockLog(itemId, amount);
 ```
 
+
+### 防止同一用户多次秒杀下单
+
+**考虑2种情形**
+- 用户**已经秒杀成功**，再对一个商品发出多次秒杀请求，如果服务器不进行判断，就会让同一用户，重复下单。
+- **未秒杀成功**的用户同时对一个商品发出多次秒杀请求，对于多次秒杀请求，服务器会判断用户的两次秒杀请求为合法请求，完成下单和减库存的数据库操作。
+上述两种情况都是不合理的。一个用户只能秒杀一个商品，如果执行成功，则订单表中会出现多条商品id和用户id相同的记录，这就引发了超卖问题
+
+1. 解决的方法是在`OrderService.createOrder`中，如果用户下单成功，，就打上“**秒杀成功标志**”。
+
+```java
+//OrderService.createOrder
+//订单入库
+orderDOMapper.insertSelective(orderDO);
+//增加销量
+itemService.increaseSales(itemId, amount);
+StockLogDO stockLogDO = stockLogDOMapper.selectByPrimaryKey(stockLogId);
+if (stockLogDO == null)
+    throw new BizException(EmBizError.UNKNOWN_ERROR);
+//设置库存流水状态为成功
+stockLogDO.setStatus(2);
+stockLogDOMapper.updateByPrimaryKeySelective(stockLogDO);
+
+//用户秒杀成功商品标记
+redisTemplate.opsForValue().set("seckill_success_itemid"+itemId+"userid"+userId,true);
+redisTemplate.expire("seckill_success_itemid"+itemId+"userid"+userId,6, TimeUnit.HOURS);
+
+```
+
+2. 在`OrderController.createOrder`初始化流水之前，先判断一下用户是否已经秒杀过，秒杀过了就直接抛出异常。
+
+```java
+//断是否已经秒杀到商品，防止一人多次秒杀成功,
+if(redisTemplate.hasKey("bought_itemid"+itemId+"userid"+userModel.getId()))
+	throw new BizException(EmBizError.BOUGHT_ERROR);
+	OrderModel orderModel= orderService.getOrderByUserIdAndItemId(userModel.getId(),itemId);
+if (orderModel != null){
+	redisTemplate.opsForValue().set("seckill_success_itemid"+itemId+"userid"+userModel.getId(),true);
+	redisTemplate.expire("seckill_success_itemid"+itemId+"userid"+userModel.getId(),6, TimeUnit.HOURS);
+	throw new BizException(EmBizError.BOUGHT_ERROR);
+	}
+
+```
+
+3. 数据库订单表 `order_info`中的user_id和item_id字段创建一个**联合唯一索引**，则在插入两条`user_id`和`item_id`相同的记录时，将会操作失败，从而事务回滚，秒杀不成功，在数据库层面解决了同一个用户对一个商品发起多次请求引发的超卖问题。
+
+
 ### 小结
 
 这一节通过引入库存流水，来记录库存的状态，以便在**事务型消息处于不同状态时进行处理**。
@@ -2008,7 +2056,7 @@ String stockLogId = itemService.initStockLog(itemId, amount);
 - 秒杀活动模块对秒杀令牌生成全权处理，逻辑收口。
 - 秒杀下单前用户需要先获得令牌才能秒杀。
 
-**秒杀令牌**和**隐藏秒杀接口地址**的作用相似，目的都是为了秒杀开始之前，秒杀地址对客户端不可见,减少作弊带来的流量。[秒杀地址的隐藏](https://github.com/Grootzz/seckill#%E5%AE%89%E5%85%A8%E4%BC%98%E5%8C%96)
+**秒杀令牌**和**隐藏秒杀接口地址**的作用相似，目的都是为了秒杀开始之前，秒杀地址对客户端不可见,减少作弊带来的流量。[秒杀地址的隐藏](https://github.com/Grootzz/seckill#%E5%AE%89%E5%85%A8%E4%BC%98%E5%8C%96)，同时同一个用户**只能有1个秒杀令牌**，防止多次点击秒杀按钮。
 
 之前**验证逻辑**和**下单逻辑**都耦合在`OrderService.createOrder`里面，现在利用秒杀令牌，使校验逻辑和下单逻辑分离。
 
@@ -2037,19 +2085,31 @@ public String generateSecondKillToken(Integer promoId,Integer itemId,Integer use
     if(itemModel==null) return null;
     //判断用户是否存在
     UserModel userModel=userService.getUserByIdInCache(userId);
-    if(userModel==null) return null;
+    if(userModel==null) 
+	// 判断是否已经秒杀到商品，防止一人多次秒杀成功
+	if(redisTemplate.hasKey("seckill_success_itemid"+itemId+"userid"+userId))
+		return null;
+	OrderModel orderModel= orderService.getOrderByUserIdAndItemId(userModel.getId(),itemId);
+	if (orderModel != null){
+		redisTemplate.opsForValue().set("seckill_success_itemid"+itemId+"userid"+userId,true);
+		redisTemplate.expire("seckill_success_itemid"+itemId+"userid"+userId,6, TimeUnit.HOURS);
+		return null;
+	}
+
+	//如果已有秒杀令牌，表示进行过秒杀操作（即是否点击过秒杀按钮）
+	String token= (String) redisTemplate.opsForValue().get("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId);
+	if(token!=null)
+		return null;
+
     //生成Token，并且存入redis内，5分钟时限
-    String token= (String) redisTemplate.opsForValue().get("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId);
-	if(token == null){
-		token = UUID.randomUUID().toString().replace("-", "");
-		redisTemplate.opsForValue().set("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId, token);
-		redisTemplate.expire("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId, 5, TimeUnit.MINUTES);
+	String token = UUID.randomUUID().toString().replace("-", "");
+	redisTemplate.opsForValue().set("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId, token);		redisTemplate.expire("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId, 5, TimeUnit.MINUTES);
     }
     return token;
 }
 ```
 
-这样，`OrderService.createOrder`的校验逻辑就可以删除，校验逻辑和下单逻辑分开。
+这样，`OrderService.createOrder`和`OrderController.createOrder`的校验逻辑就可以删除，校验逻辑和下单逻辑分开。
 
 2. `OrderController`新开一个`generateToken`接口，以便前端请求，返回令牌。
 
@@ -2068,7 +2128,7 @@ public CommonReturnType generateToken(···) throws BizException {
 
 ```
 
-3. 前端在点击“**下单**”后，首先会请求`generateToken`接口，返回秒杀令牌。然后将秒杀令牌`promoToken`作为参数，再去请求后端`createOrder`接口：
+3. 前端在点击“**下单**”后（不论点击多次都只会有1个秒杀令牌），首先会请求`generateToken`接口，返回秒杀令牌。然后将秒杀令牌`promoToken`作为参数，再去请求后端`createOrder`接口：
 
 ```java
 @RequestMapping(value = "/createorder",···)
@@ -2339,7 +2399,7 @@ if (!orderCreateRateLimiter.tryAcquire())
 ## 总结—下单流程
 
 1. 运营发布秒杀活动，系统初始化，把商品库存数量stock缓存到Redis上面来。
-2. 用户点击下单，需要输入**验证码**，后端判断**验证码**是否正确；如果验证码正确，检验**库存**、**用户**及**活动信息**，以及该**用户是否已经秒杀过**，避免一个账户秒杀多个商品。如果检验成功**还有库存**并且**令牌还有余量**，返回秒杀令牌Token，将秒杀令牌promoToken作为参数去请求后端秒杀接口；如果没有库存、令牌没有余量，直接返回前端**库存不足**信息，即后面的大量请求无需给系统带来压力。。
+2. 用户点击下单，需要输入**验证码**，后端判断**验证码**是否正确；如果验证码正确，检验**库存**、**用户**及**活动信息**，以及该**用户是否已经秒杀过**(秒杀令牌是否已有，订单缓存记录是否已有)，避免一个账户秒杀多个商品。如果检验成功**还有库存**并且**令牌还有余量**，返回秒杀令牌Token，将秒杀令牌promoToken作为参数去请求后端秒杀接口；如果没有库存、令牌没有余量，直接返回前端**库存不足**信息，即后面的大量请求无需给系统带来压力。。
 3. 后端收到秒杀请求，校验**秒杀令牌**，验证失败，直接返回前端；校验正确，**秒杀请求封装后事务性消息入队**,同时给前端返回一个code (0)，即代表返回排队中。
 4. Producer事务消息中调用下单方法，执行**秒杀事务**（redis预减库存，下订单，写入秒杀订单，销量增加）。秒杀方法要么**执行成功**，要么**抛出异常**。执行成功，消费端就可以异步扣减库存，抛出异常，ROLLBACK进行回滚。秒杀方法执行完**宕机**，根据库存流水状态判断**秒杀成功**、**秒杀未完成**，**秒杀失败**，秒杀成功，同上；秒杀未完成，继续等待；秒杀失败，回滚。
 5. 此时，前端根据商品id和用户轮询请求接口SecKillResult,查看是否生成了商品订单，如果请求返回-1代表秒杀失败，返回0代表排队中，返回>0代表商品id说明秒杀成功。

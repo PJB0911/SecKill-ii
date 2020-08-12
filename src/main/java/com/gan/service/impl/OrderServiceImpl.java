@@ -15,6 +15,7 @@ import com.gan.service.model.ItemModel;
 import com.gan.service.model.OrderModel;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -35,6 +37,8 @@ public class OrderServiceImpl implements OrderService {
     private SequenceDOMapper sequenceDOMapper;
     @Autowired
     private StockLogDOMapper stockLogDOMapper;
+    @Autowired
+    private RedisTemplate redisTemplate;
 
 
     @Override
@@ -126,8 +130,11 @@ public class OrderServiceImpl implements OrderService {
         stockLogDO.setStatus(2);
         stockLogDOMapper.updateByPrimaryKeySelective(stockLogDO);
 
+        //5.用户秒杀成功商品标记
+        redisTemplate.opsForValue().set("seckill_success_itemid"+itemId+"userid"+userId,true);
+        redisTemplate.expire("seckill_success_itemid"+itemId+"userid"+userId,6, TimeUnit.HOURS);
 
-        //5. 返回前端
+        //6. 返回前端
         return orderModel;
     }
 

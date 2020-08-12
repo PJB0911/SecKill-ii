@@ -70,7 +70,6 @@ public class PromoServiceImpl implements PromoService {
     }
 
 
-
     @Override
     public String generateSecondKillToken(Integer promoId, Integer itemId, Integer userId) {
         //判断库存是否售罄，若Key存在，则直接返回下单失败
@@ -101,8 +100,18 @@ public class PromoServiceImpl implements PromoService {
             return null;
 
         // 判断是否已经秒杀到商品，防止一人多次秒杀成功
-        OrderModel orderModel= orderService.getOrderByUserIdAndItemId(userId,itemId);
-        if (orderModel != null)
+        if(redisTemplate.hasKey("seckill_success_itemid"+itemId+"userid"+userId))
+            return null;
+        OrderModel orderModel= orderService.getOrderByUserIdAndItemId(userModel.getId(),itemId);
+        if (orderModel != null){
+            redisTemplate.opsForValue().set("seckill_success_itemid"+itemId+"userid"+userId,true);
+            redisTemplate.expire("seckill_success_itemid"+itemId+"userid"+userId,6, TimeUnit.HOURS);
+            return null;
+        }
+
+        //如果已有秒杀令牌，表示进行过秒杀操作（即是否点击过秒杀按钮）
+        String token= (String) redisTemplate.opsForValue().get("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId);
+        if(token!=null)
             return null;
 
         //获取大闸数量
@@ -111,18 +120,16 @@ public class PromoServiceImpl implements PromoService {
             return null;
 
         //生成Token，并且存入redis内，5分钟时限
-        String token= (String) redisTemplate.opsForValue().get("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId);
-        if(token == null){
-            token = UUID.randomUUID().toString().replace("-", "");
-            redisTemplate.opsForValue().set("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId, token);
-            redisTemplate.expire("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId, 5, TimeUnit.MINUTES);
-        }
+        token = UUID.randomUUID().toString().replace("-", "");
+        redisTemplate.opsForValue().set("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId, token);
+        redisTemplate.expire("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId, 5, TimeUnit.MINUTES);
         return token;
     }
 
 
     /**
      * 将 promoDO 对象转换成 PromoModel
+     *
      * @param promoDO promoDO
      * @return PromoModel
      */
