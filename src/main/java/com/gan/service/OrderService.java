@@ -18,9 +18,17 @@ public interface OrderService {
      * @param promoId 秒杀活动id
      * @param amount  购买数量
      * @param stockLogId  库存流水id
-     * @return 商品model
+     * @return 订单model
      * @throws BizException
      */
     OrderModel createOrder(Integer userId, Integer itemId, Integer promoId, Integer amount, String stockLogId) throws BizException;
 
+
+    /**
+     * 获取用户秒杀订单
+     * @param userId  用户id
+     * @param itemId  商品id
+     * @return 订单model
+     */
+    OrderModel getOrderByUserIdAndItemId(Integer userId, Integer itemId);
 }

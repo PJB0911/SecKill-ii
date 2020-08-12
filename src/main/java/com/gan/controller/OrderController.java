@@ -173,6 +173,11 @@ public class OrderController extends BaseController {
         if (redisTemplate.hasKey("promo_item_stock_invalid_"+itemId))
             throw new BizException(EmBizError.STOCK_NOT_ENOUGH);*/
 
+        // 判断是否已经秒杀到商品，防止一人多次秒杀成功,，已经整合在秒杀令牌生成方法PromoService.generateSecondKillToken()中
+        /*OrderModel orderModel= orderService.getOrderByUserIdAndItemId(userModel.getId(),itemId);
+        if (orderModel != null)
+            throw new BizException(EmBizError.BOUGHT_ERROR);*/
+
         //非消息事务的处理方式
         //orderService.createOrder(userModel.getId(), itemId, promoId, amount);
 

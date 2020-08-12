@@ -126,7 +126,15 @@ public class OrderServiceImpl implements OrderService {
         stockLogDO.setStatus(2);
         stockLogDOMapper.updateByPrimaryKeySelective(stockLogDO);
 
+
         //5. 返回前端
+        return orderModel;
+    }
+
+    @Override
+    public OrderModel getOrderByUserIdAndItemId(Integer userId, Integer itemId) {
+        OrderDO orderDO=orderDOMapper.selectByUserIdAndItemId(userId,itemId);
+        OrderModel orderModel=convertFromOrdeDO(orderDO);
         return orderModel;
     }
 
@@ -144,6 +152,20 @@ public class OrderServiceImpl implements OrderService {
         orderDO.setItemPrice(orderModel.getItemPrice().doubleValue());
         orderDO.setOrderPrice(orderModel.getOrderPrice().doubleValue());
         return orderDO;
+    }
+
+    /**
+     * 将  OrderDO 对象转换成 orderModel
+     *
+     * @param orderDO orderDO
+     * @return orderModel
+     */
+    private OrderModel convertFromOrdeDO(OrderDO orderDO) {
+        if (orderDO == null)
+            return null;
+        OrderModel orderModel = new OrderModel();
+        BeanUtils.copyProperties(orderDO, orderModel);
+        return orderModel;
     }
 
     /**

@@ -1623,10 +1623,13 @@ public class MqConsumer {
                 Map<String,Object> map=JSON.parseObject(jsonString, Map.class);
                 Integer itemId= (Integer) map.get("itemId");
                 Integer amount= (Integer) map.get("amount");
-                //去数据库扣减库存
-                itemStockDOMapper.decreaseStock(itemId,amount);
+               //去数据库扣减库存
+                int updateRow=itemStockDOMapper.decreaseStock(itemId, amount);
                 //返回消息消费成功
-                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+                if(updateRow==1)
+                    return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+				//消费失败
+                return ConsumeConcurrentlyStatus.RECONSUME_LATER;
             }
         });
         consumer.start();
@@ -1661,7 +1664,7 @@ public boolean decreaseStock(Integer itemId, Integer amount) {
 **4 异步扣减库存存在的问题**
 
 1. 如果异步消息发送失败，只能回滚Redis。
-2. 消费端从数据库扣减操作执行失败，如何处理。
+2. 消费端从数据库扣减操作执行失败，如何处理（[RocketMQ消费消息失败的处理办法](https://blog.csdn.net/LO_YUN/article/details/104301740)）。
 3. 下单失败无法正确回补库存（比如用户取消订单）。
 
 
@@ -2336,8 +2339,8 @@ if (!orderCreateRateLimiter.tryAcquire())
 ## 总结—下单流程
 
 1. 运营发布秒杀活动，系统初始化，把商品库存数量stock缓存到Redis上面来。
-2. 用户点击下单，需要输入**验证码**，后端判断**验证码**是否正确；如果验证码正确，检验**库存**、**用户**及**活动信息**，如果**还有库存**并且**令牌还有余量**，返回秒杀令牌Token，将秒杀令牌promoToken作为参数去请求后端秒杀接口；如果没有库存、令牌没有余量，直接返回前端**库存不足**信息，即后面的大量请求无需给系统带来压力。。
-3. 后端收到秒杀请求，校验**秒杀令牌**，判断该**用户是否已经秒杀**到该商品，避免一个账户秒杀多个商品。验证失败，直接返回前端；校验正确，**秒杀请求封装后事务性消息入队**,同时给前端返回一个code (0)，即代表返回排队中。
+2. 用户点击下单，需要输入**验证码**，后端判断**验证码**是否正确；如果验证码正确，检验**库存**、**用户**及**活动信息**，以及该**用户是否已经秒杀过**，避免一个账户秒杀多个商品。如果检验成功**还有库存**并且**令牌还有余量**，返回秒杀令牌Token，将秒杀令牌promoToken作为参数去请求后端秒杀接口；如果没有库存、令牌没有余量，直接返回前端**库存不足**信息，即后面的大量请求无需给系统带来压力。。
+3. 后端收到秒杀请求，校验**秒杀令牌**，验证失败，直接返回前端；校验正确，**秒杀请求封装后事务性消息入队**,同时给前端返回一个code (0)，即代表返回排队中。
 4. Producer事务消息中调用下单方法，执行**秒杀事务**（redis预减库存，下订单，写入秒杀订单，销量增加）。秒杀方法要么**执行成功**，要么**抛出异常**。执行成功，消费端就可以异步扣减库存，抛出异常，ROLLBACK进行回滚。秒杀方法执行完**宕机**，根据库存流水状态判断**秒杀成功**、**秒杀未完成**，**秒杀失败**，秒杀成功，同上；秒杀未完成，继续等待；秒杀失败，回滚。
 5. 此时，前端根据商品id和用户轮询请求接口SecKillResult,查看是否生成了商品订单，如果请求返回-1代表秒杀失败，返回0代表排队中，返回>0代表商品id说明秒杀成功。
 

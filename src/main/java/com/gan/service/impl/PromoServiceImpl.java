@@ -3,9 +3,11 @@ package com.gan.service.impl;
 import com.gan.dao.PromoDOMapper;
 import com.gan.dataobject.PromoDO;
 import com.gan.service.ItemService;
+import com.gan.service.OrderService;
 import com.gan.service.PromoService;
 import com.gan.service.UserService;
 import com.gan.service.model.ItemModel;
+import com.gan.service.model.OrderModel;
 import com.gan.service.model.PromoModel;
 import com.gan.service.model.UserModel;
 import org.joda.time.DateTime;
@@ -27,6 +29,8 @@ public class PromoServiceImpl implements PromoService {
     private ItemService itemService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private OrderService orderService;
     @Autowired
     private RedisTemplate redisTemplate;
 
@@ -95,6 +99,12 @@ public class PromoServiceImpl implements PromoService {
         UserModel userModel = userService.getUserByIdInCache(userId);
         if (userModel == null)
             return null;
+
+        // 判断是否已经秒杀到商品，防止一人多次秒杀成功
+        OrderModel orderModel= orderService.getOrderByUserIdAndItemId(userId,itemId);
+        if (orderModel != null)
+            return null;
+
         //获取大闸数量
         long result = redisTemplate.opsForValue().increment("promo_door_count_" + promoId, -1);
         if (result < 0)

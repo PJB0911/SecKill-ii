@@ -51,9 +51,11 @@ public class MqConsumer {
                 Integer itemId = (Integer) map.get("itemId");
                 Integer amount = (Integer) map.get("amount");
                 //去数据库扣减库存
-                itemStockDOMapper.decreaseStock(itemId, amount);
+                int updateRow=itemStockDOMapper.decreaseStock(itemId, amount);
                 //返回消息消费成功
-                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+                if(updateRow==1)
+                    return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+                return ConsumeConcurrentlyStatus.RECONSUME_LATER;
             }
         });
         consumer.start();
