@@ -2307,8 +2307,8 @@ public CommonReturnType generateToken(··· @RequestParam(name = "verifyCode") 
 但是一般衡量并发性，是用TPS或者QPS，而该方案由于限制了线程数，自然不能用TPS或者QPS衡量。
 
 参考：
-- [redis统计用户访问次数限流](https://github.com/Grootzz/seckill#%E5%AE%89%E5%85%A8%E4%BC%98%E5%8C%96)
-- [自定义注解+Spring方法拦截器+Redis访问次数统计](https://blog.csdn.net/bskfnvjtlyzmv867/article/details/89923044)
+- [自定义注解+Spring拦截器+Redis访问次数统计](https://blog.csdn.net/bskfnvjtlyzmv867/article/details/89923044)
+- [redis+lua 实现分布式令牌桶，高并发限流](https://blog.csdn.net/limingcai168/article/details/85168491)
 
 
 ### 限流方案—令牌桶/漏桶
