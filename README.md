@@ -2344,6 +2344,7 @@ public CommonReturnType generateToken(··· @RequestParam(name = "verifyCode") 
 
 - [Guava RateLimiter限流](https://www.jianshu.com/p/5d4fe4b2a726)
 - [限流与RateLimiter](https://www.cnblogs.com/xrq730/p/11025029.html)
+- [redis+lua 实现分布式令牌桶，高并发限流](https://blog.csdn.net/sunlihuo/article/details/79700225)
 
 ```java
 @PostConstruct
