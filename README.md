@@ -2176,6 +2176,9 @@ public void publishPromo(Integer promoId) {
 2. ，在`PromoService.generateSecondKillToken`方法中，在生成令牌之前，首先将Redis里的令牌总量减1，然后再判断是否剩余，如果<0，直接返回null。
 
 ```java
+//如果已有秒杀令牌，表示进行过秒杀操作（即是否点击过秒杀按钮）
+...
+
 //获取大闸数量
 long result = redisTemplate.opsForValue().increment("promo_door_count_" + promoId, -1);
 if (result < 0) 
