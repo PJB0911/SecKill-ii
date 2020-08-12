@@ -2307,8 +2307,8 @@ public CommonReturnType generateToken(··· @RequestParam(name = "verifyCode") 
 但是一般衡量并发性，是用TPS或者QPS，而该方案由于限制了线程数，自然不能用TPS或者QPS衡量。
 
 参考：
-- [自定义注解+Spring拦截器+Redis访问次数统计](https://blog.csdn.net/bskfnvjtlyzmv867/article/details/89923044)
-- [redis+lua 实现分布式令牌桶，高并发限流](https://blog.csdn.net/limingcai168/article/details/85168491)
+- [基于Redis+LUA脚本的令牌桶算法限流策略实现](https://blog.csdn.net/limingcai168/article/details/85168491)
+- [redis+lua 实现分布式令牌桶，高并发限流](https://blog.csdn.net/sunlihuo/article/details/79700225)
 
 
 ### 限流方案—令牌桶/漏桶
@@ -2343,6 +2343,8 @@ public CommonReturnType generateToken(··· @RequestParam(name = "verifyCode") 
 
 - [Guava RateLimiter限流](https://www.jianshu.com/p/5d4fe4b2a726)
 - [限流与RateLimiter](https://www.cnblogs.com/xrq730/p/11025029.html)
+- [限制用户访问次数：访问自定义注解+Spring拦截器+Redis统计次数](https://blog.csdn.net/bskfnvjtlyzmv867/article/details/89923044)
+
 
 ```java
 @PostConstruct
@@ -2365,7 +2367,7 @@ if (!orderCreateRateLimiter.tryAcquire())
 
 **RateLimiter的限制**
 
-RateLimiter是**单机限流**的，也就是说它无法跨JVM使用，对于分布式系统，RateLimiter无法保证限流效果（如果单节点QPS限制在400/s，分布式系统总请求就是**节点数x400/s**），因此需要采用[redis+lua 实现分布式令牌桶，高并发限流](https://blog.csdn.net/limingcai168/article/details/85168491)。
+RateLimiter是**单机限流**的，也就是说它无法跨JVM使用，对于分布式系统，RateLimiter无法保证限流效果（如果单节点QPS限制在400/s，分布式系统总请求就是**节点数x400/s**），因此需要采用[基于Redis+LUA脚本的令牌桶算法限流策略实现](https://blog.csdn.net/limingcai168/article/details/85168491)。
 
 
 ### 防刷技术
