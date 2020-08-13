@@ -78,7 +78,7 @@ public class OrderServiceImpl implements OrderService {
         boolean result = itemService.decreaseStock(itemId, amount);
         if (!result)
             throw new BizException(EmBizError.STOCK_NOT_ENOUGH);
-        //3. 订单入库
+        //3. 创建订单入库
         OrderModel orderModel = new OrderModel();
         orderModel.setUserId(userId);
         orderModel.setItemId(itemId);

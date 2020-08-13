@@ -110,6 +110,7 @@
   * [UNKNOWN状态处理](#unknown状态处理)
   * [库存售罄处理](#库存售罄处理)
   * [防止同一用户多次秒杀下单](#防止同一用户多次秒杀下单)
+  * [消息重复问题](#消息重复问题)
   * [小结](#小结-7)
     * [可以改进的地方](#可以改进的地方)
   * [下一步优化方向](#下一步优化方向-7)
@@ -2008,7 +2009,7 @@ redisTemplate.expire("seckill_success_itemid"+itemId+"userid"+userId,6, TimeUnit
 2. 在`OrderController.createOrder`初始化流水之前，先判断一下用户是否已经秒杀过，秒杀过了就直接抛出异常。
 
 ```java
-//断是否已经秒杀到商品，防止一人多次秒杀成功,
+//判断是否已经秒杀到商品，防止一人多次秒杀成功,
 if(redisTemplate.hasKey("bought_itemid"+itemId+"userid"+userModel.getId()))
      throw new BizException(EmBizError.BOUGHT_ERROR);
 OrderModel orderModel= orderService.getOrderByUserIdAndItemId(userModel.getId(),itemId);
@@ -2021,6 +2022,63 @@ if (orderModel != null){
 ```
 
 3. 数据库订单表 `order_info`中的user_id和item_id字段创建一个**联合唯一索引**，则在插入两条`user_id`和`item_id`相同的记录时，将会操作失败，从而事务回滚，秒杀不成功，在数据库层面解决了同一个用户对一个商品发起多次请求引发的超卖问题。
+
+
+### 消息重复问题
+
+**考虑一种情形**
+RocketMQ在消息量大，网络状况不好的的情况下，当第一次发送消息时，Broker接收到消息没有正确返回发送成功的状态 发送方可能就会自动重试发第二次消息就，就造成**消息重复**。
+
+- 解决的方法是在`MqConsumer`中，如果数据库`item_stock`表已经扣减成功，，就打上“**扣减库存成功标志**”。
+
+```java
+public class MqConsumer {
+    private DefaultMQPushConsumer consumer;
+    @Value("${mq.nameserver.addr}")
+    private String nameAddr;
+    @Value("${mq.topicname}")
+    private String topicName;
+    @Autowired
+    private ItemStockDOMapper itemStockDOMapper;
+    @PostConstruct
+    public void init() throws MQClientException {
+        consumer=new DefaultMQPushConsumer("stock_consumer_group");
+        //监听名为topicName的话题
+        consumer.setNamesrvAddr(nameAddr);
+        //监听topicName话题下的所有消息
+        consumer.subscribe(topicName,"*");
+        //这个匿名类会监听消息队列中的消息
+        consumer.registerMessageListener(new MessageListenerConcurrently() {
+            @Override
+            public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> list, ConsumeConcurrentlyContext consumeConcurrentlyContext) {
+                //实现缓存数据真正到数据库扣减的逻辑
+                //从消息队列中获取消息
+                Message message=list.get(0);
+                //反序列化消息
+                String jsonString=new String(message.getBody());
+                Map<String,Object> map=JSON.parseObject(jsonString, Map.class);
+                Integer itemId= (Integer) map.get("itemId");
+                Integer amount= (Integer) map.get("amount");
+				//防止重复消费，先校验扣除流水缓存，如果存在，直接返回，保持幂等性
+				if(redisTemplate.hasKey("decreaseStock_success_stockLogId"+stockLogId+"itemId"+itemId))
+					return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+               //去数据库扣减库存
+                int updateRow=itemStockDOMapper.decreaseStock(itemId, amount);
+                //扣减成功，缓存扣除流水成功消息，返回消息消费成功
+                if(updateRow==1){
+					redisTemplate.opsForValue().set("decreaseStock_success_stockLogId"+stockLogId+"itemId"+itemId,true);
+                    redisTemplate.expire("decreaseStock_success_stockLogId"+stockLogId+"itemId"+itemId,10, TimeUnit.MINUTES);
+					return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+				}
+                    
+				//消费失败
+                return ConsumeConcurrentlyStatus.RECONSUME_LATER;
+            }
+        });
+        consumer.start();
+    }
+}
+```
 
 
 ### 小结
@@ -2424,6 +2482,7 @@ RateLimiter是**单机限流**的，也就是说它无法跨JVM使用，对于�
 
 - [超卖问题](https://github.com/Grootzz/seckill#%E8%B6%85%E5%8D%96%E9%97%AE%E9%A2%98)
 - [缓存问题](#缓存雪崩缓存穿透缓存更新)
+- [重复消费、顺序消费](https://mp.weixin.qq.com/s/OKon95MRUqDc9IwtEqPSjQ)
 - [其他问题](https://github.com/qiurunze123/miaosha)
 
 
