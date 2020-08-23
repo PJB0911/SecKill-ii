@@ -2484,6 +2484,7 @@ RateLimiter是**单机限流**的，也就是说它无法跨JVM使用，对于�
 - [超卖问题](https://github.com/Grootzz/seckill#%E8%B6%85%E5%8D%96%E9%97%AE%E9%A2%98)
 - [缓存问题](#缓存雪崩缓存穿透缓存更新)
 - [重复消费、顺序消费](https://mp.weixin.qq.com/s/OKon95MRUqDc9IwtEqPSjQ)
+- [消息队列比较](https://www.jianshu.com/p/fec054f3e496)
 - [其他问题](https://github.com/qiurunze123/miaosha)
 
 
