@@ -1142,6 +1142,7 @@ location /itemredis/get{
 **参考资料：**
 - [缓存雪崩、缓存穿透、缓存更新了解多少](https://segmentfault.com/a/1190000017882763)
 - [高性能网站设计之缓存更新的套路](https://blog.csdn.net/tTU1EvLDeLFq5btqiK/article/details/78693323)
+- [《吊打面试官》系列-缓存雪崩、击穿、穿透](https://mp.weixin.qq.com/s/knz-j-m8bTg5GnKc7oeZLg)
 
 
 ### 小结
