@@ -2435,8 +2435,9 @@ if (!orderCreateRateLimiter.tryAcquire())
 
 **RateLimiter的限制**
 
-RateLimiter是**单机限流**的，也就是说它无法跨JVM使用，对于分布式系统，RateLimiter无法保证限流效果（如果单节点QPS限制在400/s，分布式系统总请求就是**节点数x400/s**），因此需要采用[基于Redis+LUA脚本的令牌桶算法限流策略实现](https://blog.csdn.net/limingcai168/article/details/85168491)。
-
+RateLimiter是**单机限流**的，也就是说它无法跨JVM使用，对于分布式系统，RateLimiter无法保证限流效果（如果单节点QPS限制在400/s，分布式系统总请求就是**节点数x400/s**），因此需要采用**Redis+LUA脚本**。
+-[基于Redis+LUA脚本的令牌桶算法限流策略实现](https://blog.csdn.net/limingcai168/article/details/85168491)。
+-[最近学到的限流知识](https://mp.weixin.qq.com/s?__biz=MzI4Njg5MDA5NA==&mid=2247485652&idx=1&sn=dbcc843869bd94228cb71980cd84cc8c&chksm=ebd749d5dca0c0c30c0b11c0535005a9def3c66aa3f5c56d816256122b53f367de5f5ba6a6c3&token=1948873548&lang=zh_CN#rd)
 
 ### 防刷技术
 
