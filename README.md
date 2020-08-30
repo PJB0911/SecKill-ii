@@ -2326,8 +2326,8 @@ future.get();
 之前的流程是，用户点击下单后，会直接拿到令牌然后执行下单流程。现在，用户点击下单后，前端会弹出一个“验证码”，用户输入之后，才能请求下单接口。
 
 **验证码的作用**：
--防止利用机器人等手段防止非目标用户参与秒杀；
--减少单位时间内的请求数量。
+- 防止利用机器人等手段防止非目标用户参与秒杀；
+- 减少单位时间内的请求数量。
 
 对于一个秒杀商品，在开始秒杀后肯定会有许多用户参与秒杀，那么在开始秒杀的时候，用户请求数量是巨大，从而对服务器产生较大的压力，而通过验证码的方式就可以有效地将集中式的请求分散，从而达到削减请求峰值的目的。
 
@@ -2376,11 +2376,6 @@ public CommonReturnType generateToken(··· @RequestParam(name = "verifyCode") 
 限制并发量意思就是同一时间**只有一定数量的线程去处理请求**，实现也比较简单，维护一个**全局计数器**，当请求进入接口时，计数器-1，并且判断计数器是否>0，大于0则处理请求，小于0则拒绝等待。
 
 但是一般衡量并发性，是用TPS或者QPS，而该方案由于限制了线程数，自然不能用TPS或者QPS衡量。
-
-参考：
-- [基于Redis+LUA脚本的令牌桶算法限流策略实现](https://blog.csdn.net/limingcai168/article/details/85168491)
-- [redis+lua 实现分布式令牌桶，高并发限流](https://blog.csdn.net/sunlihuo/article/details/79700225)
-
 
 ### 限流方案—令牌桶/漏桶
 
@@ -2439,8 +2434,8 @@ if (!orderCreateRateLimiter.tryAcquire())
 **RateLimiter的限制**
 
 RateLimiter是**单机限流**的，也就是说它无法跨JVM使用，对于分布式系统，RateLimiter无法保证限流效果（如果单节点QPS限制在400/s，分布式系统总请求就是**节点数x400/s**），因此需要采用**Redis+LUA脚本**。
--[基于Redis+LUA脚本的令牌桶算法限流策略实现](https://blog.csdn.net/limingcai168/article/details/85168491)。
--[最近学到的限流知识](https://mp.weixin.qq.com/s?__biz=MzI4Njg5MDA5NA==&mid=2247485652&idx=1&sn=dbcc843869bd94228cb71980cd84cc8c&chksm=ebd749d5dca0c0c30c0b11c0535005a9def3c66aa3f5c56d816256122b53f367de5f5ba6a6c3&token=1948873548&lang=zh_CN#rd)
+- [基于Redis+LUA脚本的令牌桶算法限流策略实现](https://blog.csdn.net/limingcai168/article/details/85168491)。
+- [最近学到的限流知识](https://mp.weixin.qq.com/s?__biz=MzI4Njg5MDA5NA==&mid=2247485652&idx=1&sn=dbcc843869bd94228cb71980cd84cc8c&chksm=ebd749d5dca0c0c30c0b11c0535005a9def3c66aa3f5c56d816256122b53f367de5f5ba6a6c3&token=1948873548&lang=zh_CN#rd)
 
 ### 防刷技术
 
