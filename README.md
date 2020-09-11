@@ -1062,7 +1062,7 @@ location /luaitem/get{
 
 
 **参考资料：**
-- [Nginx+lua+openresty系列 | 第一篇：openresty介绍](https://mp.weixin.qq.com/s?__biz=MzU5NzgwNDIyNQ==&mid=2247483694&idx=1&sn=9f533a334010cfe1964f42e6cffe1990&chksm=fe4c9480c93b1d96cba4b60550f5115a774b15dade18b235724804156536f5b883a5d0aa5a1f&token=1136700187&lang=zh_CN#rd)
+- [lua里使用共享内存-lua_shared_dict](http://www.04007.cn/article/130.html)
 - [Nginx+lua+openresty系列 | 第七篇：openresty企业级应用1](https://mp.weixin.qq.com/s?__biz=MzU5NzgwNDIyNQ==&mid=2247483779&idx=1&sn=7a06b401f3c730027662815623a957a7&chksm=fe4c942dc93b1d3b2c8372e3273df9609a19eb3a0b9639c53702bf49d40bd5d6f17709d9a9fb&token=1578665362&lang=zh_CN#rd)
 - [基于nginx+lua+redis实现的多级缓存架构存取的控制逻辑](https://www.cnblogs.com/z-3FENG/articles/9592072.html)
 
