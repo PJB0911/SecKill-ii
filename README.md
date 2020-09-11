@@ -412,9 +412,6 @@ public class WebServerConfiguration implements WebServerFactoryCustomizer<Config
 
 
 
-**参考资料：**
-- [1 spring-boot压测调优](https://blog.csdn.net/haozi_rou/article/details/105281588)
-
 ### 小结
 
 这一节通过`pstree -p pid | wc -l`和`top -H`指令，配合`jmeter`压测工具：
@@ -558,8 +555,6 @@ Nginx引入了一种比线程更小的概念，那就是“**协程**”。协�
 
 **参考资料：**
 - [什么是协程](https://blog.csdn.net/zheng199172/article/details/88800275)
-- [2 nginx分布式扩展](https://blog.csdn.net/haozi_rou/article/details/105290258)
-- [3 nginx长连接优化](https://blog.csdn.net/haozi_rou/article/details/105295165)
 
 
 ### 小结
@@ -982,7 +977,6 @@ location /helloworld {
 
 **参考资料：**
 - [Nginx+lua+openresty系列 | 第六篇：Lua入门](https://mp.weixin.qq.com/s?__biz=MzU5NzgwNDIyNQ==&mid=2247483763&idx=1&sn=5aad2f0d3f73d7e3e474ccf568e0f5a9&chksm=fe4c94ddc93b1dcbf829ccc03af6606d2fb8f25c60682691ba19a593721004d7b500e675eab9&token=480040588&lang=zh_CN#rd)
-- [5 查询性能优化（重点阅读Nginx lua知识介绍）](https://blog.csdn.net/haozi_rou/article/details/105343059)
 
 
 ### OpenResty—Shared dict缓存
@@ -1114,7 +1108,6 @@ location /itemredis/get{
 **参考资料：**
 - [Nginx+Lua+Redis 实现高性能缓存数据读取](https://segmentfault.com/p/1210000011625271/read)
 - [使用nginx+lua脚本读写redis缓存](https://my.oschina.net/u/1175305/blog/1799941)
-- [6 nginx的共享字典、redis实战简介](https://blog.csdn.net/haozi_rou/article/details/105364264)
 
 
 ### 缓存雪崩、缓存穿透、缓存更新
