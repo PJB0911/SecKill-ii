@@ -7,7 +7,6 @@ import com.gan.service.OrderService;
 import com.gan.service.PromoService;
 import com.gan.service.UserService;
 import com.gan.service.model.ItemModel;
-import com.gan.service.model.OrderModel;
 import com.gan.service.model.PromoModel;
 import com.gan.service.model.UserModel;
 import org.joda.time.DateTime;
@@ -102,12 +101,6 @@ public class PromoServiceImpl implements PromoService {
         // 判断是否已经秒杀到商品，防止一人多次秒杀成功
         if(redisTemplate.hasKey("seckill_success_itemid"+itemId+"userid"+userId))
             return null;
-        OrderModel orderModel= orderService.getOrderByUserIdAndItemId(userModel.getId(),itemId);
-        if (orderModel != null){
-            redisTemplate.opsForValue().set("seckill_success_itemid"+itemId+"userid"+userId,true);
-            redisTemplate.expire("seckill_success_itemid"+itemId+"userid"+userId,6, TimeUnit.HOURS);
-            return null;
-        }
 
         //如果已有秒杀令牌，表示进行过秒杀操作（即是否点击过秒杀按钮）
         String token= (String) redisTemplate.opsForValue().get("promo_token_" + promoId + "_userid_" + userId + "_itemid_" + itemId);

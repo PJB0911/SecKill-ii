@@ -176,12 +176,7 @@ public class OrderController extends BaseController {
         // 判断是否已经秒杀到商品，防止一人多次秒杀成功,，已经整合在秒杀令牌生成方法PromoService.generateSecondKillToken()中
         /*if(redisTemplate.hasKey("bought_itemid"+itemId+"userid"+userModel.getId()))
             throw new BizException(EmBizError.BOUGHT_ERROR);
-        OrderModel orderModel= orderService.getOrderByUserIdAndItemId(userModel.getId(),itemId);
-        if (orderModel != null){
-            redisTemplate.opsForValue().set("seckill_success_itemid"+itemId+"userid"+userModel.getId(),true);
-            redisTemplate.expire("seckill_success_itemid"+itemId+"userid"+userModel.getId(),6, TimeUnit.HOURS);
-            throw new BizException(EmBizError.BOUGHT_ERROR);
-        }*/
+        */
 
 
         //非消息事务的处理方式
