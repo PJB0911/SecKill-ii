@@ -2354,13 +2354,11 @@ public CommonReturnType generateToken(··· @RequestParam(name = "verifyCode") 
 
 漏桶无法应对**突发流量**，比如突然来10个请求，只能处理一个。但是令牌桶，可以一次性处理10个。所以，令牌桶用得比较多。
 
-### 限流力度
+### 限流力度和限流范围
 
-分为**接口维**度和**总维度**，**接口维度**就是限制某个接口的流量，而**总维度**是限制所有接口的流量。
+**限流力度**分为**接口维**度和**总维度**，**接口维度**就是限制某个接口的流量，而**总维度**是限制所有接口的流量。
 
-### 限流范围
-
-分为**集群限流**和**单机限流**，**集群限流**就是限制整个集群的流量，需要用Redis或者其它中间件技术来做统一计数器，往往会产生性能瓶颈。**单机限流**在负载均衡的前提下效果更好。
+**限流范围**分为**集群限流**和**单机限流**，**集群限流**就是限制整个集群的流量，需要用Redis或者其它中间件技术来做统一计数器，往往会产生性能瓶颈。**单机限流**在负载均衡的前提下效果更好。
 
 ### RateLimiter限流实现
 
@@ -2368,7 +2366,7 @@ public CommonReturnType generateToken(··· @RequestParam(name = "verifyCode") 
 
 - [Guava RateLimiter限流](https://www.jianshu.com/p/5d4fe4b2a726)
 - [限流与RateLimiter](https://www.cnblogs.com/xrq730/p/11025029.html)
-- [限制用户访问次数：访问自定义注解+Spring拦截器+Redis统计次数](https://blog.csdn.net/bskfnvjtlyzmv867/article/details/89923044)
+
 
 
 ```java
@@ -2394,7 +2392,8 @@ if (!orderCreateRateLimiter.tryAcquire())
 
 RateLimiter是**单机限流**的，也就是说它无法跨JVM使用，对于分布式系统，RateLimiter无法保证限流效果（如果单节点QPS限制在400/s，分布式系统总请求就是**节点数x400/s**），因此需要采用**Redis+LUA脚本**。
 - [基于Redis+LUA脚本的令牌桶算法限流策略实现](https://blog.csdn.net/limingcai168/article/details/85168491)。
-- [最近学到的限流知识](https://mp.weixin.qq.com/s?__biz=MzI4Njg5MDA5NA==&mid=2247485652&idx=1&sn=dbcc843869bd94228cb71980cd84cc8c&chksm=ebd749d5dca0c0c30c0b11c0535005a9def3c66aa3f5c56d816256122b53f367de5f5ba6a6c3&token=1948873548&lang=zh_CN#rd)
+- [Redis+LUA脚本实现限制ip和用户名访问次数](https://mp.weixin.qq.com/s?__biz=MzI4Njg5MDA5NA==&mid=2247485652&idx=1&sn=dbcc843869bd94228cb71980cd84cc8c&chksm=ebd749d5dca0c0c30c0b11c0535005a9def3c66aa3f5c56d816256122b53f367de5f5ba6a6c3&token=1948873548&lang=zh_CN#rd)
+- [限制用户访问次数：自定义注解+Spring拦截器+Redis统计次数](https://blog.csdn.net/bskfnvjtlyzmv867/article/details/89923044)
 
 ### 防刷技术
 
@@ -2419,8 +2418,8 @@ RateLimiter是**单机限流**的，也就是说它无法跨JVM使用，对于�
 ### 小结
 
 1. 通过引入验证码技术，在发送秒杀令牌之前，再做一层限流。
-2. 介绍了三种限流的方案，使用`RateLimiter`实现了令牌桶限流。
-3. 介绍了常见的防刷技术以及它们的缺点。介绍了黄牛为什么难防，应该怎样防。
+2. 介绍常见限流的方案，使用`RateLimiter`实现了令牌桶限流。
+3. 总结常见的防刷技术以及它们的缺点，及黄牛为什么难防，应该怎样防。
 
 ------
 
