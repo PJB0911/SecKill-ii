@@ -109,7 +109,7 @@ public class OrderServiceImpl implements OrderService {
             throw new BizException(EmBizError.MQ_SEND_FAIL);
         }*/
 
-      /*  优化—事务型消息第一步：能解决事务提交过程异常的问题，但是如果消息发送失败，则无能为力。
+      /*  优化—事务型消息第二步：能解决事务提交过程异常的问题，但是如果消息发送失败，则无能为力。
           解决方法见MqProduce事务消息 transactionAsyncReduceStock（） 和 executeLocalTransaction（），将下单和发送消息合在一起
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
             @Override
