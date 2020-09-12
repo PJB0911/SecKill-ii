@@ -1491,7 +1491,7 @@ public ItemModel getItemByIdInCache(Integer id) {
 
 RocketMQ是阿里巴巴在RabbitMQ基础上改进的一个消息中间件，具体见[浅入浅出-RocketMQ](https://mp.weixin.qq.com/s/y-4TVwbc7AFGEA7q-_OkYw)。
 
-默认的RocketMQ**配置**需要较大内存（`Xms4g Xmx4g Xmn2g`），会导致Java**内存不足**的问题。需要修改`bin/runbroker.sh`，`bin/runserver.sh`，`bin/tool.sh`、`conf/borker.conf `等文件配置。具体配置可参考[交易方面的优化RocketMQ](https://blog.csdn.net/haozi_rou/article/details/105410523)
+默认的RocketMQ**配置**需要较大内存（`Xms4g Xmx4g Xmn2g`），会导致Java**内存不足**的问题。需要修改`bin/runbroker.sh`，`bin/runserver.sh`，`bin/tool.sh`、`conf/borker.conf `等文件配置。
 
 **2 同步数据库库存到缓存**
 
