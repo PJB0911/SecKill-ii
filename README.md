@@ -1965,7 +1965,7 @@ String stockLogId = itemService.initStockLog(itemId, amount);
 - **未秒杀成功**的用户同时对一个商品发出多次秒杀请求，对于多次秒杀请求，服务器会判断用户的两次秒杀请求为合法请求，完成下单和减库存的数据库操作。
 上述两种情况都是不合理的。一个用户只能秒杀一个商品，如果执行成功，则订单表中会出现多条商品id和用户id相同的记录，这就引发了超卖问题
 
-1. 解决的方法是在`OrderService.createOrder`中，如果用户下单成功，，就打上“**秒杀成功标志**”。
+1. 解决的方法是在`OrderService.createOrder`中，如果用户下单成功，就打上“**秒杀成功标志**”。
 
 ```java
 //OrderService.createOrder
@@ -2003,7 +2003,7 @@ if(redisTemplate.hasKey("bought_itemid"+itemId+"userid"+userModel.getId()))
 **考虑一种情形**
 RocketMQ在消息量大，网络状况不好的的情况下，当第一次发送消息时，Broker接收到消息没有正确返回发送成功的状态 发送方可能就会自动重试发第二次消息就，就造成**消息重复**。
 
-- 解决的方法是在`MqConsumer`中，如果数据库`item_stock`表已经扣减成功，，就打上“**扣减库存成功标志**”。
+- 解决的方法是在`MqConsumer`中，如果数据库`item_stock`表已经扣减成功，就打上“**扣减库存成功标志**”。
 
 ```java
 public class MqConsumer {
