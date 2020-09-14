@@ -2049,8 +2049,8 @@ public class MqConsumer {
                         return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
                     }
                 }         
-		   //消费失败
-          return ConsumeConcurrentlyStatus.RECONSUME_LATER;
+                   //消费失败
+                  return ConsumeConcurrentlyStatus.RECONSUME_LATER;
             }
         });
         consumer.start();
