@@ -2037,23 +2037,20 @@ public class MqConsumer {
 		//防止重复消费，先校验扣除流水缓存，如果存在，直接返回，保持幂等性
 		if(redisTemplate.hasKey("decreaseStock_success_stockLogId"+stockLogId+"itemId"+itemId))
 		    return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-        //校验只有下单状态，才能减库存
-        StockLogDO stockLogDO = stockLogDOMapper.selectByPrimaryKey(stockLogId);
-        if (stockLogDO!=null && stockLogDO.getStatus() == 2) {
-            //去数据库扣减库存
-            int updateRow = itemStockDOMapper.decreaseStock(itemId, amount);
-            //扣减成功，缓存扣除流水成功消息，返回消息消费成功
-             if (updateRow == 1) {
-                 redisTemplate.opsForValue().set("decreaseStock_success_stockLogId" + stockLogId + "itemId" + itemId, true);
-                 redisTemplate.expire("decreaseStock_success_stockLogId" + stockLogId + "itemId" + itemId, 10, TimeUnit.MINUTES);
-                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-             }
-        }
-		    return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-		}
-                    
-		//消费失败
-                return ConsumeConcurrentlyStatus.RECONSUME_LATER;
+            //校验只有下单状态，才能减库存
+            StockLogDO stockLogDO = stockLogDOMapper.selectByPrimaryKey(stockLogId);
+            if (stockLogDO!=null && stockLogDO.getStatus() == 2) {
+                //去数据库扣减库存
+                int updateRow = itemStockDOMapper.decreaseStock(itemId, amount);
+                //扣减成功，缓存扣除流水成功消息，返回消息消费成功
+                if (updateRow == 1) {
+                    redisTemplate.opsForValue().set("decreaseStock_success_stockLogId" + stockLogId + "itemId" + itemId, true);
+                    redisTemplate.expire("decreaseStock_success_stockLogId" + stockLogId + "itemId" + itemId, 10, TimeUnit.MINUTES);
+                    return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+                }
+            }         
+		   //消费失败
+          return ConsumeConcurrentlyStatus.RECONSUME_LATER;
             }
         });
         consumer.start();
