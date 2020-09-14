@@ -123,7 +123,7 @@ public class OrderServiceImpl implements OrderService {
             }
         });*/
 
-        //4.设置库存流水状态为成功
+        //4.设置库存流水状态为下单成功
         StockLogDO stockLogDO = stockLogDOMapper.selectByPrimaryKey(stockLogId);
         if (stockLogDO == null)
             throw new BizException(EmBizError.UNKNOWN_ERROR);

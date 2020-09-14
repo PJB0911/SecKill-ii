@@ -67,7 +67,7 @@ public class MqProducer {
                     //如果发生异常，createOrder已经回滚，此时要回滚事务型消息。
                     //设置stockLog为回滚状态
                     StockLogDO stockLogDO = stockLogDOMapper.selectByPrimaryKey(stockLogId);
-                    stockLogDO.setStatus(3);
+                    stockLogDO.setStatus(4);
                     stockLogDOMapper.updateByPrimaryKeySelective(stockLogDO);
                     return LocalTransactionState.ROLLBACK_MESSAGE;
                 }
@@ -90,6 +90,7 @@ public class MqProducer {
                 } else if (stockLogDO.getStatus() == 1) {
                     return LocalTransactionState.UNKNOW;
                 }
+                //如果下单和减库存都完成，或者其他情况，都撤回
                 return LocalTransactionState.ROLLBACK_MESSAGE;
             }
         });

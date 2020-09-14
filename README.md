@@ -1832,7 +1832,7 @@ public String initStockLog(Integer itemId, Integer amount) {
     stockLogDO.setItemId(itemId);
     stockLogDO.setAmount(amount);
     stockLogDO.setStockLogId(UUID.randomUUID().toString().replace("-", ""));
-    //1表示初始状态，2表示下单扣减库存成功，3表示下单回滚
+    //1表示初始状态，2表示下单成功，3表示扣减库存成功，4表示下单回滚
     stockLogDO.setStatus(1);
     stockLogDOMapper.insertSelective(stockLogDO);
     return stockLogDO.getStockLogId();
@@ -1873,7 +1873,7 @@ itemService.increaseSales(itemId, amount);
 StockLogDO stockLogDO = stockLogDOMapper.selectByPrimaryKey(stockLogId);
 if (stockLogDO == null)
     throw new BizException(EmBizError.UNKNOWN_ERROR);
-//设置库存流水状态为成功
+//设置库存流水状态为下单成功
 stockLogDO.setStatus(2);
 stockLogDOMapper.updateByPrimaryKeySelective(stockLogDO);
 ```
@@ -1893,7 +1893,7 @@ try {
     //如果发生异常，createOrder已经回滚，此时要回滚事务型消息。
     //设置stockLog为回滚状态
     StockLogDO stockLogDO = stockLogDOMapper.selectByPrimaryKey(stockLogId);
-    stockLogDO.setStatus(3);
+    stockLogDO.setStatus(4);
     stockLogDOMapper.updateByPrimaryKeySelective(stockLogDO);
     return LocalTransactionState.ROLLBACK_MESSAGE;
 }
@@ -1920,7 +1920,7 @@ public LocalTransactionState checkLocalTransaction(MessageExt message) {
     } else if (stockLogDO.getStatus() == 1) {
         return LocalTransactionState.UNKNOW;
     }
-    //否则就回滚
+    // //如果下单和减库存都完成，或者其他情况，都回滚
     return LocalTransactionState.ROLLBACK_MESSAGE;
 }
 ```
@@ -2037,12 +2037,18 @@ public class MqConsumer {
 		//防止重复消费，先校验扣除流水缓存，如果存在，直接返回，保持幂等性
 		if(redisTemplate.hasKey("decreaseStock_success_stockLogId"+stockLogId+"itemId"+itemId))
 		    return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-               //去数据库扣减库存
-                int updateRow=itemStockDOMapper.decreaseStock(itemId, amount);
-                //扣减成功，缓存扣除流水成功消息，返回消息消费成功
-                if(updateRow==1){
-		    redisTemplate.opsForValue().set("decreaseStock_success_stockLogId"+stockLogId+"itemId"+itemId,true);
-                    redisTemplate.expire("decreaseStock_success_stockLogId"+stockLogId+"itemId"+itemId,10, TimeUnit.MINUTES);
+        //校验只有下单状态，才能减库存
+        StockLogDO stockLogDO = stockLogDOMapper.selectByPrimaryKey(stockLogId);
+        if (stockLogDO!=null && stockLogDO.getStatus() == 2) {
+            //去数据库扣减库存
+            int updateRow = itemStockDOMapper.decreaseStock(itemId, amount);
+            //扣减成功，缓存扣除流水成功消息，返回消息消费成功
+             if (updateRow == 1) {
+                 redisTemplate.opsForValue().set("decreaseStock_success_stockLogId" + stockLogId + "itemId" + itemId, true);
+                 redisTemplate.expire("decreaseStock_success_stockLogId" + stockLogId + "itemId" + itemId, 10, TimeUnit.MINUTES);
+                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+             }
+        }
 		    return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
 		}
                     

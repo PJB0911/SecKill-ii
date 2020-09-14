@@ -159,7 +159,7 @@ public class ItemServiceImpl implements ItemService {
         stockLogDO.setItemId(itemId);
         stockLogDO.setAmount(amount);
         stockLogDO.setStockLogId(UUID.randomUUID().toString().replace("-", ""));
-        //1表示初始状态，2表示下单扣减库存成功，3表示下单回滚
+        //1表示初始状态，2表示下单成功，3表示扣减库存成功，4表示下单回滚
         stockLogDO.setStatus(1);
         stockLogDOMapper.insertSelective(stockLogDO);
         return stockLogDO.getStockLogId();
