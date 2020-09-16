@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Tomcat长连接配置类:
- * //当Spring容器内没有TomcatEmbeddedServletContainerFactory这个bean时，会把此bean加载进来
+ * 当Spring容器内没有TomcatEmbeddedServletContainerFactory这个bean时，会把此bean加载进来
  */
 
 @Component
